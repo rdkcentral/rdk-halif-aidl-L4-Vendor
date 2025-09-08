@@ -69,7 +69,7 @@
 #include <ut_control_plane.h>
 #include "vts_player.h"
 
-#define VTS_AV_TEST_CONFIG_PATH "./av_test_configuration/vts_l4_av_test_config.yaml"
+#define VTS_AV_TEST_CONFIG_PATH "./av_test_configurations/vts_l4_av_test_config.yaml"
 
 extern void *gAVTestConfiguration;
 
