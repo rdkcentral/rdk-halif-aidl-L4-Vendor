@@ -73,55 +73,97 @@
 
 #include "vts_audiodecoder.h"
 #include "vts_videodecoder.h"
+#include "vts_audiosink.h"
+#include "vts_videosink.h"
+#include "vts_avbuffer.h"
 
 using namespace std;
+
+typedef struct audioDecoderMetrics
+{
+    int32_t id;
+    int32_t decodedFrames;
+    int32_t errorFrames;
+    int32_t errorFrames_cb;
+    int32_t droppedFrames;
+} audioDecoderMetrics_t;
+
+typedef struct audioSinkMetrics
+{
+    int32_t id;
+    int32_t renderLatency;
+} audioSinkMetrics_t;
+
+typedef struct videoDecoderMetrics
+{
+    int32_t id;
+    int32_t decodedFrames;
+    int32_t errorFrames;
+    int32_t errorFrames_cb;
+    int32_t droppedFrames;
+} videoDecoderMetrics_t;
+
+typedef struct videoSinkMetrics
+{
+    int32_t id;
+    int32_t receivedFrames;
+    int32_t presentedFrames;
+    int32_t framesDroppedLate;
+    int32_t framesDroppedFRC;
+    int32_t framesRepeatedFRC;
+    int32_t framesRepeatedMiss;
+    int32_t underflow;
+} videoSinkMetrics_t;
+
+static vtsL4AVTestConfiguration_t gTestConfiguration;
+static vector<audioDecoderMetrics_t> gBeforeAudioDecoderMetrics, gAfterAudioDecoderMetrics;
+static audioDecoderMetrics_t gDeltaAudioDecoderMetrics;
+static vector<audioSinkMetrics_t> gBeforeAudioSinkMetrics, gAfterAudioSinkMetrics;
+static audioSinkMetrics_t gDeltaAudioSinkMetrics;
+static vector<videoDecoderMetrics_t> gBeforeVideoDecoderMetrics, gAfterVideoDecoderMetrics;
+static videoDecoderMetrics_t gDeltaVideoDecoderMetrics;
+static vector<videoSinkMetrics_t> gBeforeVideoSinkMetrics, gAfterVideoSinkMetrics;
+static videoSinkMetrics_t gDeltaVideoSinkMetrics;
+static HeapMetrics gBeforeHeapMetrics, gAfterHeapMetrics;
 
 /* Test class registration with UT_Core */
 UT_ADD_TEST_TO_GROUP(VTS_L4_AVMODULE, UT_TESTS_L4)
 
-static sp<IAVBuffer> vts_avbuffer_getService()
-{
-    return
-        android::interface_cast<IAVBuffer>(
-            android::defaultServiceManager()->getService(
-                android::String16(IAVBuffer::serviceName().c_str())
-            )
-        );
-}
-
 class VTS_L4_AVMODULE : public UTCore
 {
-public:
-    VTS_L4_AVMODULE() : UTCore()
-    {
-        mPlayer = nullptr;
-    }
+    public:
+        VTS_L4_AVMODULE() : UTCore()
+        {
+            mPlayer = nullptr;
+        }
 
-    ~VTS_L4_AVMODULE() override = default;
+        ~VTS_L4_AVMODULE() override = default;
 
     public:
         std::unique_ptr<VTSPlayer> mPlayer;
         const char *mModuleName = "AVModule";
         const char *mTestGroup = "L4";
         vector<tuple<IAudioDecoder::Id, sp<IAudioDecoder>, sp<AudioDecoderEventListener>>> mAudioDecoderList;
+        vector<tuple<IAudioSink::Id, sp<IAudioSink>, sp<AudioSinkEventListener>>> mAudioSinkList;
         vector<tuple<IVideoDecoder::Id, sp<IVideoDecoder>, sp<VideoDecoderEventListener>>> mVideoDecoderList;
+        vector<tuple<IVideoSink::Id, sp<IVideoSink>, sp<VideoSinkEventListener>>> mVideoSinkList;
 
     void SetUp() override
     {
-
         try {
             vector<IAudioDecoder::Id> audioDecoderIds;
             vector<IVideoDecoder::Id> videoDecoderIds;
+            vector<IAudioSink::Id> audioSinkIds;
+            vector<IVideoSink::Id> videoSinkIds;
+
             //TODO: check if this required
             android::ProcessState::self()->startThreadPool();
 
             /* Get the Audio decoder IDs */
             AUDIODECODER_MANAGER_GETAUDIODECODERIDS(audioDecoderIds);
-
             for(const auto& _decoderId: audioDecoderIds)
             {
                 sp<IAudioDecoder> audioDecoder;
-
                 sp<AudioDecoderEventListener> eventListener = new AudioDecoderEventListener();
 
                 eventListener->setDecoderID(_decoderId.value);
@@ -137,11 +179,9 @@ public:
 
             /* Get the Video decoder IDs */
             VIDEODECODER_MANAGER_GETVIDEODECODERIDS(videoDecoderIds);
-
             for(const auto& _decoderId: videoDecoderIds)
             {
                 sp<IVideoDecoder> videoDecoder;
-
                 sp<VideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
 
                 eventListener->setDecoderID(_decoderId.value);
@@ -155,12 +195,281 @@ public:
                 mVideoDecoderList.push_back({_decoderId, videoDecoder, eventListener});
             }
 
+            /* Get the Audio Sink IDs */
+            AUDIOSINK_MANAGER_GETAUDIOSINKIDS(audioSinkIds);
+            for(const auto& _sinkId: audioSinkIds)
+            {
+                sp<IAudioSink> audioSink;
+                sp<AudioSinkEventListener> eventListener = new AudioSinkEventListener(_sinkId.value);
+
+                /* Get Audio decoder handle */
+                AUDIOSINK_MANAGER_GETAUDIOSINK(_sinkId, audioSink);
+
+                /* Register events */
+                AUDIOSINK_REGISTER_EVENT_SUCCESS(audioSink, eventListener);
+
+                mAudioSinkList.push_back({_sinkId, audioSink, eventListener});
+            }
+
+            /*Get the Video Sink IDs*/
+            VIDEOSINK_MANAGER_GETVIDEOSINKIDS(videoSinkIds);
+            for(const auto& _sinkId: videoSinkIds)
+            {
+
+                sp<IVideoSink> videoSink;
+                sp<VideoSinkEventListener> videoSinkEventListener = new VideoSinkEventListener();
+
+                videoSinkEventListener->setSinkID(_sinkId.value);
+
+                /* Get Video Sink handle */
+                VIDEOSINK_MANAGER_GETVIDEOSINK(_sinkId, videoSink);
+
+                /* Register events */
+                VIDEOSINK_REGISTER_EVENT_SUCCESS(videoSink, videoSinkEventListener);
+
+                mVideoSinkList.push_back({_sinkId, videoSink, videoSinkEventListener});
+            }
+
         } catch (const std::exception& ex) {
             UT_LOG_ERROR("Exception in SetUp(): %s", ex.what());
             UT_ASSERT_TRUE(false);
         } catch (...) {
             UT_LOG_ERROR("Unknown exception in SetUp()");
             UT_ASSERT_TRUE(false);
+        }
+    }
+
+    void getAudioDecoderMetrics(vector<audioDecoderMetrics_t> &audioDecoderMetrics)
+    {
+        audioDecoderMetrics.clear();
+        for (const auto& [_decoderId, decoderHandle, eventListener] : mAudioDecoderList)
+        {
+            audioDecoderMetrics_t metrics;
+
+            optional<PropertyValue> propertyValue;
+            metrics.decodedFrames = -1;
+            metrics.errorFrames = -1;
+            metrics.droppedFrames = -1;
+            metrics.id = _decoderId.value;
+
+            AUDIODECODER_GET_PROPERTY_SUCCESS(decoderHandle, audiodecoder::Property::METRIC_FRAMES_DECODED, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.decodedFrames = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            AUDIODECODER_GET_PROPERTY_SUCCESS(decoderHandle, audiodecoder::Property::METRIC_DECODE_ERRORS, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.errorFrames = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            AUDIODECODER_GET_PROPERTY_SUCCESS(decoderHandle, audiodecoder::Property::METRIC_FRAMES_DROPPED, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.droppedFrames = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+            audioDecoderMetrics.push_back(metrics);
+        }
+    }
+    void getAudioSinkMetrics(vector<audioSinkMetrics_t> &audioSinkMetrics)
+    {
+        audioSinkMetrics.clear();
+        for (const auto& [_sinkId, sinkHandle, eventListener] : mAudioSinkList)
+        {
+            audioSinkMetrics_t metrics;
+
+            optional<PropertyValue> propertyValue;
+            metrics.renderLatency = -1;
+            metrics.id = _sinkId.value;
+
+            AUDIOSINK_GET_PROPERTY_SUCCESS(sinkHandle, audiosink::Property::RENDER_LATENCY_NS, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.renderLatency = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            audioSinkMetrics.push_back(metrics);
+        }
+    }
+    void getVideoDecoderMetrics(vector<videoDecoderMetrics_t> &videoDecoderMetrics)
+    {
+        videoDecoderMetrics.clear();
+        for (const auto& [_decoderId, decoderHandle, eventListener] : mVideoDecoderList)
+        {
+            videoDecoderMetrics_t metrics;
+
+            optional<PropertyValue> propertyValue;
+            metrics.decodedFrames = -1;
+            metrics.errorFrames = -1;
+            metrics.droppedFrames = -1;
+            metrics.id = _decoderId.value;
+
+            VIDEODECODER_GETPROPERTY(decoderHandle, videodecoder::Property::METRIC_FRAMES_DECODED, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.decodedFrames = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            VIDEODECODER_GETPROPERTY(decoderHandle, videodecoder::Property::METRIC_DECODE_ERRORS, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.errorFrames = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            VIDEODECODER_GETPROPERTY(decoderHandle, videodecoder::Property::METRIC_FRAMES_DROPPED, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.droppedFrames = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+            videoDecoderMetrics.push_back(metrics);
+        }
+    }
+    void getVideoSinkMetrics(vector<videoSinkMetrics_t> &videoSinkMetrics)
+    {
+        videoSinkMetrics.clear();
+        for (const auto& [_sinkId, sinkHandle, eventListener] : mVideoSinkList)
+        {
+            videoSinkMetrics_t metrics;
+
+            optional<PropertyValue> propertyValue;
+
+            metrics.receivedFrames = -1;
+            metrics.presentedFrames = -1;
+            metrics.framesDroppedLate = -1;
+            metrics.framesDroppedFRC = -1;
+            metrics.framesRepeatedFRC = -1;
+            metrics.framesRepeatedMiss = -1;
+            metrics.id = _sinkId.value;
+
+            VIDEOSINK_GET_PROPERTY_SUCCESS(sinkHandle, videosink::Property::METRIC_FRAMES_RECEIVED, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.receivedFrames = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            VIDEOSINK_GET_PROPERTY_SUCCESS(sinkHandle, videosink::Property::METRIC_FRAMES_PRESENTED, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.presentedFrames = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            VIDEOSINK_GET_PROPERTY_SUCCESS(sinkHandle, videosink::Property::METRIC_FRAMES_DROPPED_LATE, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.framesDroppedLate = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            VIDEOSINK_GET_PROPERTY_SUCCESS(sinkHandle, videosink::Property::METRIC_FRAMES_DROPPED_FRC, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.framesDroppedFRC = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            VIDEOSINK_GET_PROPERTY_SUCCESS(sinkHandle, videosink::Property::METRIC_FRAMES_REPEATED_FRC, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.framesRepeatedFRC = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+
+            VIDEOSINK_GET_PROPERTY_SUCCESS(sinkHandle, videosink::Property::METRIC_FRAMES_REPEATED_MISSING_FRAME, propertyValue);
+            if (propertyValue.has_value() && propertyValue->value.has_value())
+            {
+                metrics.framesRepeatedMiss = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
+            }
+            videoSinkMetrics.push_back(metrics);
+        }
+    }
+
+    void validateAudioDecoderMetrics(int32_t id,
+                                     vector<audioDecoderMetrics_t> &audioBeforeDecoderMetrics,
+                                     vector<audioDecoderMetrics_t> &audioAfterDecoderMetrics,
+                                     audioDecoderMetrics_t &deltaMetrics)
+    {
+        for (size_t i = 0; i < audioBeforeDecoderMetrics.size(); ++i)
+        {
+            if(audioBeforeDecoderMetrics[i].id != id)
+                continue;
+
+            if(audioBeforeDecoderMetrics[i].decodedFrames != -1 &&
+               audioBeforeDecoderMetrics[i].decodedFrames + deltaMetrics.decodedFrames != audioAfterDecoderMetrics[i].decodedFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            if(audioBeforeDecoderMetrics[i].errorFrames != -1 &&
+               audioBeforeDecoderMetrics[i].errorFrames + deltaMetrics.errorFrames != audioAfterDecoderMetrics[i].errorFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            if(audioBeforeDecoderMetrics[i].droppedFrames != -1 &&
+               audioBeforeDecoderMetrics[i].droppedFrames + deltaMetrics.droppedFrames != audioAfterDecoderMetrics[i].droppedFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            break;
+        }
+    }
+
+    void validateVideoDecoderMetrics(int32_t id,
+                                     vector<videoDecoderMetrics_t> &videoBeforeDecoderMetrics,
+                                     vector<videoDecoderMetrics_t> &videoAfterDecoderMetrics,
+                                     videoDecoderMetrics_t &deltaMetrics)
+    {
+        for (size_t i = 0; i < videoBeforeDecoderMetrics.size(); ++i)
+        {
+            if(videoBeforeDecoderMetrics[i].id != id)
+                continue;
+
+            if(videoBeforeDecoderMetrics[i].decodedFrames != -1 &&
+               videoBeforeDecoderMetrics[i].decodedFrames + deltaMetrics.decodedFrames != videoAfterDecoderMetrics[i].decodedFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            if(videoBeforeDecoderMetrics[i].errorFrames != -1 &&
+               videoBeforeDecoderMetrics[i].errorFrames + deltaMetrics.errorFrames != videoAfterDecoderMetrics[i].errorFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            if(videoBeforeDecoderMetrics[i].droppedFrames != -1 &&
+               videoBeforeDecoderMetrics[i].droppedFrames + deltaMetrics.droppedFrames != videoAfterDecoderMetrics[i].droppedFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            break;
+        }
+    }
+
+    void validateVideoSinkMetrics(int32_t id,
+                                  vector<videoSinkMetrics_t> &videoBeforeSinkMetrics,
+                                  vector<videoSinkMetrics_t> &videoAfterSinkMetrics,
+                                  videoSinkMetrics_t &deltaMetrics)
+    {
+        for (size_t i = 0; i < videoBeforeSinkMetrics.size(); ++i)
+        {
+            if(videoBeforeSinkMetrics[i].id != id)
+                continue;
+
+            if(videoBeforeSinkMetrics[i].presentedFrames != -1 &&
+               videoBeforeSinkMetrics[i].presentedFrames + deltaMetrics.presentedFrames != videoAfterSinkMetrics[i].presentedFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            if(videoBeforeSinkMetrics[i].receivedFrames != -1 &&
+               videoBeforeSinkMetrics[i].receivedFrames + deltaMetrics.receivedFrames != videoAfterSinkMetrics[i].receivedFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            if(videoBeforeSinkMetrics[i].framesDroppedLate != -1 &&
+               videoBeforeSinkMetrics[i].framesDroppedLate != videoAfterSinkMetrics[i].framesDroppedLate)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            if(videoBeforeSinkMetrics[i].framesRepeatedMiss != -1 &&
+               videoBeforeSinkMetrics[i].framesRepeatedMiss != videoAfterSinkMetrics[i].framesRepeatedMiss)
+            {
+                UT_ASSERT_TRUE(false);
+            }
+            break;
         }
     }
 
@@ -257,15 +566,47 @@ public:
 
     void startTest(void* pTestInstance, const char* moduleName, const char * testGroup, const char *testName, bool requireQualityCheck = false)
     {
-        vtsL4AVTestConfiguration_t testConfiguration;
+        vts_av_parse_testconfig(pTestInstance, moduleName, testGroup, testName, gTestConfiguration);
 
-        vts_av_parse_testconfig(pTestInstance, moduleName, testGroup, testName, testConfiguration);
-
-        for(auto& stream: testConfiguration.testStreams)
+        for(auto& stream: gTestConfiguration.testStreams)
         {
+            HeapMetrics beforeHeapMetrics, afterHeapMetrics;
+            HeapMetrics beforeSecureHeapMetrics, afterSecureHeapMetrics;
+
+            /* Get the metrics before start of play */
+            AVBUFFER_GETMETRICS(gAVBufferManager, false, beforeHeapMetrics);
+            AVBUFFER_GETMETRICS(gAVBufferManager, true, beforeSecureHeapMetrics);
+            getAudioDecoderMetrics(gBeforeAudioDecoderMetrics);
+            getVideoDecoderMetrics(gBeforeVideoDecoderMetrics);
+            getVideoSinkMetrics(gBeforeVideoSinkMetrics);
+
             UT_LOG_INFO("Testing Stream: %s", stream.c_str());
-            playWithTrickModes(stream, testConfiguration.trickModes);
-            this_thread::sleep_for(chrono::milliseconds(testConfiguration.playDealy));
+            playWithTrickModes(stream, gTestConfiguration.trickModes);
+            this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+
+            /* Get the metrics after start of play */
+            getAudioDecoderMetrics(gAfterAudioDecoderMetrics);
+            getVideoDecoderMetrics(gAfterVideoDecoderMetrics);
+            getVideoSinkMetrics(gAfterVideoSinkMetrics);
+            AVBUFFER_GETMETRICS(gAVBufferManager, false, afterHeapMetrics);
+            AVBUFFER_GETMETRICS(gAVBufferManager, true, afterSecureHeapMetrics);
+
+            /* Validate the metrics */
+            validateAudioDecoderMetrics(AudioDecoderEventListener::getUsedDecoder(), gBeforeAudioDecoderMetrics,
+                                        gAfterAudioDecoderMetrics, gDeltaAudioDecoderMetrics);
+            validateVideoDecoderMetrics(VideoDecoderEventListener::getUsedDecoder(), gBeforeVideoDecoderMetrics,
+                                        gAfterVideoDecoderMetrics, gDeltaVideoDecoderMetrics);
+            validateVideoSinkMetrics(VideoSinkEventListener::getUsedDecoder(), gBeforeVideoSinkMetrics,
+                                     gAfterVideoSinkMetrics, gDeltaVideoSinkMetrics);
+
+            /* check if the decoder freed all the buffer pools */
+            UT_ASSERT_TRUE(beforeHeapMetrics.secure == afterHeapMetrics.secure);
+            UT_ASSERT_TRUE(beforeHeapMetrics.bytesUsed == afterHeapMetrics.bytesUsed);
+            UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal);
+
+            UT_ASSERT_TRUE(beforeSecureHeapMetrics.secure == afterSecureHeapMetrics.secure);
+            UT_ASSERT_TRUE(beforeSecureHeapMetrics.bytesUsed == afterSecureHeapMetrics.bytesUsed);
+            UT_ASSERT_TRUE(beforeSecureHeapMetrics.bytesTotal == afterSecureHeapMetrics.bytesTotal);
 
             if(requireQualityCheck)
             {
