@@ -12,6 +12,11 @@
   - [Normal playback](#21-normal-playback)
   - [Pause / Resume, Trick Modes and Seek](#22-pause-resume-trick-modes-and-seek)
   - [Robustness Error Handling Performance](#23-robustness-error-handling-and-performance)
+- [Video only Playback with Secure/non-secure](#30-video-only-playback-with-secure-and-non-secure)
+  - [Normal playback](#31-normal-playback)
+  - [Pause / Resume, Trick Modes and Seek](#32-pause-resume-trick-modes-and-seek)
+  - [Robustness & Error Handling ](#33-robustness-and-error-handling)
+  - [Performance & Longevity](#34-performance-and-longevity)
 - [Validations methods](#validations-methods)
 
 ## Overview
@@ -35,6 +40,8 @@ This test plan is structured around three primary use cases to ensure comprehens
 
 - **Robustness, Error Handling, and Performance:** Tests the resilience of the decoder when presented with malformed or incomplete streams and validates system stability during long-duration playback sessions.
 
+*Note: Full test case list and streams used for tests will be available at [Testcases](https://github.com/rdkcentral/rdk-halif-aidl-unified-vts/tree/main/host/tests/TestCases).*
+
 ## 1.0 AV Playback with Secure and Non-secure
 
 ### 1.1 Normal playback
@@ -52,7 +59,7 @@ This test plan is structured around three primary use cases to ensure comprehens
 | VTS_L4_H264_AC32002  |H264            |DOLBY_AC3    |1920x1080 (FHD)  | SDR              | BT.709        |10bit    |60p            | YUV420          |12                  | Smooth playback, No AV drift, no frame drops, correct metadata,If unsupported, the decoder should fail gracefully without crashes.|
 | VTS_L4_H265_AC31001  |H265            |DOLBY_AC3    |3840x2160      | HDR              | BT.2020        |10bit    |60p            | YUV420          |18                  | Smooth playback, No AV drift, no frame drops, correct metadata,If unsupported, the decoder should fail gracefully without crashes.|
 
-*Note: The full list of test case IDs will be available in the test configuration.*
+---
 
 | #|Test Dimension | Comments |
 |--|---------------|----------|
@@ -71,6 +78,8 @@ This test plan is structured around three primary use cases to ensure comprehens
 | 13 | Resolution switching | Moving between different resolution encodings, without breaking GOP sequences. |
 | 14 | Aspect ratio switching | Picture aspect ratios must be reported correctly in FrameMetadata. <br> Pixel aspect ratios must be reported correctly in FrameMetadata. |
 
+---
+
 ### 1.2 Pause Resume Trick Modes and Seek
 
 **Objective**:<br> Validate trick modes and seeking with minimal frame drops and accurate FrameMetadata reporting.
@@ -83,6 +92,8 @@ This test plan is structured around three primary use cases to ensure comprehens
 | VTS_L4_H264_AAC-204  | Pause → Resume              | No sync jump                  |
 | VTS_L4_H264_AAC-205  | Pause → Trick mode → Resume | Seamless, no corruption             |
 | VTS_L4_H264_AAC-206  | Pause → seek → resume       | Seamless, no corruption             |
+
+---
 
 ### 1.3 Robustness and Error Handling
 
@@ -98,6 +109,9 @@ This test plan is structured around three primary use cases to ensure comprehens
 | VTS_L4_H264_AAC-306  | Loss of frames (incomplete GOPs) |  No crash  |
 | VTS_L4_H264_AAC-307  | Seek to middle GOP          |  Seamless, no corruption  |
 | VTS_L4_H264_AAC-308  |Corrupt metadata encoding    |   No crash  |
+| VTS_L4_H264_AAC-309  |single I-frame    |   No crash  |
+
+---
 
 ### 1.4 Performance and Longevity
 
@@ -107,6 +121,8 @@ This test plan is structured around three primary use cases to ensure comprehens
 | :--- | :--- | :--- |
 |VTS_L4_H264_AAC-401| 2-hour playback (1080p, 60p, 12 Mbps) | No drift, <0.1% frame drops, stable playback|
 |VTS_L4_H265_AC3-402| 2-hour playback (4k, 60p,HDR, 25 Mbps) | No drift, <0.1% frame drops, stable playback|
+
+---
 
 ## 2.0 Audio only Playback with Secure and Non-secure
 
@@ -125,6 +141,8 @@ This test plan is structured around three primary use cases to ensure comprehens
 | 3 | PCMFormat | Test every PCMFormat which the platform capabilities report. <br> [list of PCMFormat](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.7.1/audiodecoder/current/com/rdk/hal/audiodecoder/PCMFormat.aidl)|
 | 4 | No of Channels | Test supported Channels  <br> Mono (1.0) <br>Stereo (2.0) <br> 2.1(Stereo + Subwoofer) <br>5.1 Surround <br> 7.1 Surround|
 
+---
+
 ### 2.2 Pause Resume Trick Modes and Seek
 
 **Objective**:<br> Validate audio trick modes and pause/resume behavior.
@@ -137,6 +155,8 @@ This test plan is structured around three primary use cases to ensure comprehens
 | VTS_L4_AAC-404   | Play → Pause → Fast Forward → Resume  | Smooth transitions, no corruption        |
 | VTS_L4_AAC-405   | Loop playback (repeat track 10 times) | No drift over long duration              |
 
+---
+
 ### 2.3 Robustness, Error Handling and Performance
 
 **Objective**: <br>Validate edge cases for audio playback.
@@ -148,6 +168,61 @@ This test plan is structured around three primary use cases to ensure comprehens
 | VTS_L4_AAC-503   | Low-bitrate MP3 (32 kbps)                      | Still decodes without error       |
 | VTS_L4_AAC-504   | High-bitrate MP3 (320 kbps)                    | Proper playback                   |
 | VTS_L4_AAC-506   | Long-duration test (2 hrs AAC)                 | No drift, stable playback         |
+
+---
+
+## 3.0 Video only Playback with Secure and Non-secure
+
+### 3.1 Normal Playback
+
+**Objective**:
+Validate video-only playback across codecs, resolutions, frame rates, and dynamic ranges (no audio pipeline active).
+
+| **TC ID**        | **Video Codec** | **Resolution**   | **Dynamic Range** | **ColorSpace** | **Depth** | **Frame Rate** | **Pixel Format** | **Bitrate (Mbps)** | **Expected Result** |
+| ---------------- | --------------- | ---------------- | ----------------- | -------------- | --------- | -------------- | ---------------- | ------------------ | ------------------ |
+| VTS_L4_H264-VID101 | H.264           | 1920x1080 (FHD) | SDR               | BT.709         | 8-bit     | 30p            | YUV420           | 8                  | Smooth playback, no frame drops, A/V sync not applicable |
+| VTS_L4_HEVC-VID201 | H.265/HEVC      | 3840x2160 (UHD) | HDR10             | BT.2020        | 10-bit    | 60p            | YUV420           | 18                 | Stable playback, correct HDR metadata, no crashes |
+
+---
+
+### 3.2 Pause Resume Trick Modes and Seek
+
+**Objective**:
+Validate smooth handling of video-only trick modes without audio.
+
+| **TC ID**       | **Action**        | **Expected Result** |
+| ----------------| ----------------- | ------------------- |
+| VTS_L4_H264-VID201 | Pause → Resume    | Frame resumes cleanly, no corruption |
+| VTS_L4_H264-VID202 | Seek mid-stream   | Frame resumes at nearest I-frame, no corruption |
+| VTS_L4_H264-VID203 | Play 2x, 4x, 8x   | Smooth FF/REW, no tearing or drift |
+
+---
+
+### 3.3 Robustness and Error Handling
+
+**Objective**:
+Validate resilience of video-only playback under error or malformed conditions.
+
+| **TC ID**       | **Error Condition**             | **Expected Result** |
+| ----------------| --------------------------------| ------------------- |
+| VTS_L4_H264-VID301 | Missing audio track            | Video plays smoothly without crash |
+| VTS_L4_H264-VID302 | Corrupt I-frame                | Brief artifact, recovers at next I-frame |
+| VTS_L4_H264-VID303 | Truncated video stream         | Clean EOS, no freeze |
+| VTS_L4_H264-VID304 | Corrupt video metadata (PTS)   | Graceful handling, no crash |
+
+---
+
+### 3.4 Performance and Longevity
+
+**Objective**:
+Validate long-duration stability of video-only playback.
+
+| **TC ID**       | **Test**                          | **Expected Result** |
+| ----------------| ---------------------------------- | ------------------- |
+| VTS_L4_H264-VID401 | 2-hr FHD playback (no audio)     | No drift, <0.1% frame drops |
+| VTS_L4_HEVC-VID402 | 2-hr 4K HDR playback (no audio)  | Stable, no memory leaks or hangs |
+
+---
 
 ## Validations methods
 
@@ -163,9 +238,7 @@ If playback metrics are available, Verify key performance indicators against the
 
 Register listeners for key playback events to validate stream integrity
 
-- `onFirstFrameRendered:` Confirm the first frame is rendered correctly to measure startup time.
-
-- `onFrameOutput:` Continuously check frame metadata for flags like eos (End of Stream) and discontinuity at expected positions.
+- `onFirstFrameRendered`, `onDecodeError`, `onEndOfStream`, `onAudioUnderflow`, `onVideoUnderflow`, `onAudioResumed` `onVideoResumed`,
 
 Cross-check these with the expected values in the stream configuration file.
 
@@ -173,7 +246,6 @@ Cross-check these with the expected values in the stream configuration file.
 
 Validate subjective playback quality (e.g., free of visible or audible artifacts).
 This step will be automated using **Raft**.
-
 
 **Note**:
 Input streams may use different container formats (.mp4, .ts, .webm). If required, adaptive bitrate (ABR) formats such as HLS and MPEG-DASH will also be tested.
