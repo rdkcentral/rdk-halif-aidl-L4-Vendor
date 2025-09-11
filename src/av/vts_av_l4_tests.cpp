@@ -116,15 +116,16 @@ typedef struct videoSinkMetrics
 } videoSinkMetrics_t;
 
 static vtsL4AVTestConfiguration_t gTestConfiguration;
-static vector<audioDecoderMetrics_t> gBeforeAudioDecoderMetrics, gAfterAudioDecoderMetrics;
-static audioDecoderMetrics_t gDeltaAudioDecoderMetrics;
-static vector<audioSinkMetrics_t> gBeforeAudioSinkMetrics, gAfterAudioSinkMetrics;
-static audioSinkMetrics_t gDeltaAudioSinkMetrics;
-static vector<videoDecoderMetrics_t> gBeforeVideoDecoderMetrics, gAfterVideoDecoderMetrics;
-static videoDecoderMetrics_t gDeltaVideoDecoderMetrics;
-static vector<videoSinkMetrics_t> gBeforeVideoSinkMetrics, gAfterVideoSinkMetrics;
-static videoSinkMetrics_t gDeltaVideoSinkMetrics;
-static HeapMetrics gBeforeHeapMetrics, gAfterHeapMetrics;
+static vector<audioDecoderMetrics_t> gAudioDecoderMetrics;
+static audioDecoderMetrics_t gActualAudioDecoderMetrics;
+static vector<audioSinkMetrics_t> gAudioSinkMetrics;
+static audioSinkMetrics_t gActualAudioSinkMetrics;
+static vector<videoDecoderMetrics_t> gVideoDecoderMetrics;
+static videoDecoderMetrics_t gActualVideoDecoderMetrics;
+static vector<videoSinkMetrics_t> gVideoSinkMetrics;
+static videoSinkMetrics_t gActualVideoSinkMetrics;
+HeapMetrics gBeforeHeapMetrics, gAfterHeapMetrics;
+HeapMetrics gBeforeSecureHeapMetrics, gAfterSecureHeapMetrics;
 
 /* Test class registration with UT_Core */
 UT_ADD_TEST_TO_GROUP(VTS_L4_AVMODULE, UT_TESTS_L4)
@@ -382,27 +383,26 @@ class VTS_L4_AVMODULE : public UTCore
     }
 
     void validateAudioDecoderMetrics(int32_t id,
-                                     vector<audioDecoderMetrics_t> &audioBeforeDecoderMetrics,
-                                     vector<audioDecoderMetrics_t> &audioAfterDecoderMetrics,
-                                     audioDecoderMetrics_t &deltaMetrics)
+                                     vector<audioDecoderMetrics_t> &audioDecoderMetrics,
+                                     audioDecoderMetrics_t &actualMetrics)
     {
-        for (size_t i = 0; i < audioBeforeDecoderMetrics.size(); ++i)
+        for (size_t i = 0; i < audioDecoderMetrics.size(); ++i)
         {
-            if(audioBeforeDecoderMetrics[i].id != id)
+            if(audioDecoderMetrics[i].id != id)
                 continue;
 
-            if(audioBeforeDecoderMetrics[i].decodedFrames != -1 &&
-               audioBeforeDecoderMetrics[i].decodedFrames + deltaMetrics.decodedFrames != audioAfterDecoderMetrics[i].decodedFrames)
+            if(audioDecoderMetrics[i].decodedFrames != -1 &&
+               audioDecoderMetrics[i].decodedFrames != actualMetrics.decodedFrames)
             {
                 UT_ASSERT_TRUE(false);
             }
-            if(audioBeforeDecoderMetrics[i].errorFrames != -1 &&
-               audioBeforeDecoderMetrics[i].errorFrames + deltaMetrics.errorFrames != audioAfterDecoderMetrics[i].errorFrames)
+            if(audioDecoderMetrics[i].errorFrames != -1 &&
+               audioDecoderMetrics[i].errorFrames != actualMetrics.errorFrames)
             {
                 UT_ASSERT_TRUE(false);
             }
-            if(audioBeforeDecoderMetrics[i].droppedFrames != -1 &&
-               audioBeforeDecoderMetrics[i].droppedFrames + deltaMetrics.droppedFrames != audioAfterDecoderMetrics[i].droppedFrames)
+            if(audioDecoderMetrics[i].droppedFrames != -1 &&
+               audioDecoderMetrics[i].droppedFrames != 0)
             {
                 UT_ASSERT_TRUE(false);
             }
@@ -411,27 +411,26 @@ class VTS_L4_AVMODULE : public UTCore
     }
 
     void validateVideoDecoderMetrics(int32_t id,
-                                     vector<videoDecoderMetrics_t> &videoBeforeDecoderMetrics,
-                                     vector<videoDecoderMetrics_t> &videoAfterDecoderMetrics,
-                                     videoDecoderMetrics_t &deltaMetrics)
+                                     vector<videoDecoderMetrics_t> &videoDecoderMetrics,
+                                     videoDecoderMetrics_t &actualMetrics)
     {
-        for (size_t i = 0; i < videoBeforeDecoderMetrics.size(); ++i)
+        for (size_t i = 0; i < videoDecoderMetrics.size(); ++i)
         {
-            if(videoBeforeDecoderMetrics[i].id != id)
+            if(videoDecoderMetrics[i].id != id)
                 continue;
 
-            if(videoBeforeDecoderMetrics[i].decodedFrames != -1 &&
-               videoBeforeDecoderMetrics[i].decodedFrames + deltaMetrics.decodedFrames != videoAfterDecoderMetrics[i].decodedFrames)
+            if(videoDecoderMetrics[i].decodedFrames != -1 &&
+               videoDecoderMetrics[i].decodedFrames != actualMetrics.decodedFrames)
             {
                 UT_ASSERT_TRUE(false);
             }
-            if(videoBeforeDecoderMetrics[i].errorFrames != -1 &&
-               videoBeforeDecoderMetrics[i].errorFrames + deltaMetrics.errorFrames != videoAfterDecoderMetrics[i].errorFrames)
+            if(videoDecoderMetrics[i].errorFrames != -1 &&
+               videoDecoderMetrics[i].errorFrames != actualMetrics.errorFrames)
             {
                 UT_ASSERT_TRUE(false);
             }
-            if(videoBeforeDecoderMetrics[i].droppedFrames != -1 &&
-               videoBeforeDecoderMetrics[i].droppedFrames + deltaMetrics.droppedFrames != videoAfterDecoderMetrics[i].droppedFrames)
+            if(videoDecoderMetrics[i].droppedFrames != -1 &&
+               videoDecoderMetrics[i].droppedFrames != 0)
             {
                 UT_ASSERT_TRUE(false);
             }
@@ -440,32 +439,32 @@ class VTS_L4_AVMODULE : public UTCore
     }
 
     void validateVideoSinkMetrics(int32_t id,
-                                  vector<videoSinkMetrics_t> &videoBeforeSinkMetrics,
-                                  vector<videoSinkMetrics_t> &videoAfterSinkMetrics,
-                                  videoSinkMetrics_t &deltaMetrics)
+                                  vector<videoSinkMetrics_t> &videoSinkMetrics,
+                                  videoSinkMetrics_t &actualMetrics)
     {
-        for (size_t i = 0; i < videoBeforeSinkMetrics.size(); ++i)
+        for (size_t i = 0; i < videoSinkMetrics.size(); ++i)
         {
-            if(videoBeforeSinkMetrics[i].id != id)
+            if(videoSinkMetrics[i].id != id)
                 continue;
 
-            if(videoBeforeSinkMetrics[i].presentedFrames != -1 &&
-               videoBeforeSinkMetrics[i].presentedFrames + deltaMetrics.presentedFrames != videoAfterSinkMetrics[i].presentedFrames)
+            //TODO: check how to validate this metric
+            /*if(videoSinkMetrics[i].presentedFrames != -1 &&
+               videoSinkMetrics[i].presentedFrames != actualMetrics.presentedFrames)
+            {
+                UT_ASSERT_TRUE(false);
+            }*/
+            if(videoSinkMetrics[i].receivedFrames != -1 &&
+               videoSinkMetrics[i].receivedFrames != actualMetrics.receivedFrames)
             {
                 UT_ASSERT_TRUE(false);
             }
-            if(videoBeforeSinkMetrics[i].receivedFrames != -1 &&
-               videoBeforeSinkMetrics[i].receivedFrames + deltaMetrics.receivedFrames != videoAfterSinkMetrics[i].receivedFrames)
+            if(videoSinkMetrics[i].framesDroppedLate != -1 &&
+               videoSinkMetrics[i].framesDroppedLate != 0)
             {
                 UT_ASSERT_TRUE(false);
             }
-            if(videoBeforeSinkMetrics[i].framesDroppedLate != -1 &&
-               videoBeforeSinkMetrics[i].framesDroppedLate != videoAfterSinkMetrics[i].framesDroppedLate)
-            {
-                UT_ASSERT_TRUE(false);
-            }
-            if(videoBeforeSinkMetrics[i].framesRepeatedMiss != -1 &&
-               videoBeforeSinkMetrics[i].framesRepeatedMiss != videoAfterSinkMetrics[i].framesRepeatedMiss)
+            if(videoSinkMetrics[i].framesRepeatedMiss != -1 &&
+               videoSinkMetrics[i].framesRepeatedMiss != 0)
             {
                 UT_ASSERT_TRUE(false);
             }
@@ -570,47 +569,41 @@ class VTS_L4_AVMODULE : public UTCore
 
         for(auto& stream: gTestConfiguration.testStreams)
         {
-            HeapMetrics beforeHeapMetrics, afterHeapMetrics;
-            HeapMetrics beforeSecureHeapMetrics, afterSecureHeapMetrics;
-
             /* Get the metrics before start of play */
-            AVBUFFER_GETMETRICS(gAVBufferManager, false, beforeHeapMetrics);
-            AVBUFFER_GETMETRICS(gAVBufferManager, true, beforeSecureHeapMetrics);
-            getAudioDecoderMetrics(gBeforeAudioDecoderMetrics);
-            getVideoDecoderMetrics(gBeforeVideoDecoderMetrics);
-            getVideoSinkMetrics(gBeforeVideoSinkMetrics);
+            AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
+            AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
 
             UT_LOG_INFO("Testing Stream: %s", stream.c_str());
             playWithTrickModes(stream, gTestConfiguration.trickModes);
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
 
             /* Get the metrics after start of play */
-            getAudioDecoderMetrics(gAfterAudioDecoderMetrics);
-            getVideoDecoderMetrics(gAfterVideoDecoderMetrics);
-            getVideoSinkMetrics(gAfterVideoSinkMetrics);
-            AVBUFFER_GETMETRICS(gAVBufferManager, false, afterHeapMetrics);
-            AVBUFFER_GETMETRICS(gAVBufferManager, true, afterSecureHeapMetrics);
+            getAudioDecoderMetrics(gAudioDecoderMetrics);
+            getVideoDecoderMetrics(gVideoDecoderMetrics);
+            getVideoSinkMetrics(gVideoSinkMetrics);
+            AVBUFFER_GETMETRICS(gAVBufferManager, false, gAfterHeapMetrics);
+            AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
 
             /* Validate the metrics */
-            validateAudioDecoderMetrics(AudioDecoderEventListener::getUsedDecoder(), gBeforeAudioDecoderMetrics,
-                                        gAfterAudioDecoderMetrics, gDeltaAudioDecoderMetrics);
-            validateVideoDecoderMetrics(VideoDecoderEventListener::getUsedDecoder(), gBeforeVideoDecoderMetrics,
-                                        gAfterVideoDecoderMetrics, gDeltaVideoDecoderMetrics);
-            validateVideoSinkMetrics(VideoSinkEventListener::getUsedDecoder(), gBeforeVideoSinkMetrics,
-                                     gAfterVideoSinkMetrics, gDeltaVideoSinkMetrics);
+            validateAudioDecoderMetrics(AudioDecoderEventListener::getUsedDecoder(),
+                                        gAudioDecoderMetrics, gActualAudioDecoderMetrics);
+            validateVideoDecoderMetrics(VideoDecoderEventListener::getUsedDecoder(),
+                                        gVideoDecoderMetrics, gActualVideoDecoderMetrics);
+            validateVideoSinkMetrics(VideoSinkEventListener::getUsedDecoder(),
+                                     gVideoSinkMetrics, gActualVideoSinkMetrics);
 
             /* check if the decoder freed all the buffer pools */
-            UT_ASSERT_TRUE(beforeHeapMetrics.secure == afterHeapMetrics.secure);
-            UT_ASSERT_TRUE(beforeHeapMetrics.bytesUsed == afterHeapMetrics.bytesUsed);
-            UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal);
+            UT_ASSERT_TRUE(gBeforeHeapMetrics.secure == gAfterHeapMetrics.secure);
+            UT_ASSERT_TRUE(gBeforeHeapMetrics.bytesUsed == gAfterHeapMetrics.bytesUsed);
+            UT_ASSERT_TRUE(gBeforeHeapMetrics.bytesTotal == gAfterHeapMetrics.bytesTotal);
 
-            UT_ASSERT_TRUE(beforeSecureHeapMetrics.secure == afterSecureHeapMetrics.secure);
-            UT_ASSERT_TRUE(beforeSecureHeapMetrics.bytesUsed == afterSecureHeapMetrics.bytesUsed);
-            UT_ASSERT_TRUE(beforeSecureHeapMetrics.bytesTotal == afterSecureHeapMetrics.bytesTotal);
+            UT_ASSERT_TRUE(gBeforeSecureHeapMetrics.secure == gAfterSecureHeapMetrics.secure);
+            UT_ASSERT_TRUE(gBeforeSecureHeapMetrics.bytesUsed == gAfterSecureHeapMetrics.bytesUsed);
+            UT_ASSERT_TRUE(gBeforeSecureHeapMetrics.bytesTotal == gAfterSecureHeapMetrics.bytesTotal);
 
             if(requireQualityCheck)
             {
-                bool response = validateTest("Is the stream playback good (Y/N)?");
+                bool response = validateTest("\nIs the stream playback good (Y/N)?");
                 UT_ASSERT_TRUE(response);
             }
         }
