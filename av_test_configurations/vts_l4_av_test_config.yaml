@@ -1,9 +1,10 @@
+include_0: av_test_configurations/vts_l4_av_stream_config.yaml
 AVModule:
   stream_download_path: "http://<>/streams" #`URL` path to download the audio test streams
   input_streams_path: "assets/streams/input" #Target path where input streams are stored
   player: "gstreamer"
   L4:
-    audioOnlyPlay:
+    NoramlPlay:
       controls:
         delay_between_play: 100 # Insert delay in msec between each test stream
 
@@ -36,8 +37,8 @@ AVModule:
           - action: play
             duration: 2147483647
       streams:
-        - tones_48k_2_256.aac
-    audioOnlyTrickPlay:
+        - test_001_mp4
+    playBackWithTrickModes:
       controls:
         delay_between_play: 100
         trick_modes:
@@ -61,4 +62,4 @@ AVModule:
           - action: play
             duration: 2147483647 # Full length
       streams:
-        - countdown_200.aac
+        - test_001_mp4

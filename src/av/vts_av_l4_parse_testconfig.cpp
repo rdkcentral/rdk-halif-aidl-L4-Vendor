@@ -63,14 +63,21 @@
  */
 #include <filesystem>
 #include <string>
+#include "vts_av_l4_init.h"
+#include "vts_helper_functions.h"
 #include "vts_av_l4_parse_testconfig.h"
 
 using namespace std;
 
-std::string vts_av_parse_get_palayer(void* pTestInstance, const char *module)
+std::string vts_av_parse_get_palayer(const char *module)
 {
     ut_kvp_status_t status;
-    ut_kvp_instance_t* kvpTestInstance = (ut_kvp_instance_t*)pTestInstance;
+    ut_kvp_instance_t* kvpTestInstance = vts_kvp_create_instance(VTS_AV_TEST_CONFIG_PATH);
+    if(kvpTestInstance == nullptr)
+    {
+        UT_LOG_ERROR("Failed to create player configuration");
+        return nullptr;
+    }
     char playerName[UT_KVP_MAX_ELEMENT_SIZE] = {0};
     std::string playerString;
 
@@ -78,25 +85,27 @@ std::string vts_av_parse_get_palayer(void* pTestInstance, const char *module)
 
     playerString = playerName;
 
+    vts_kvp_destroy_instance(kvpTestInstance);
+
     return playerString;
 }
 
-UT_status_t vts_av_parse_testconfig(void* pTestInstance, const char *module, const char *testGroup,
+UT_status_t vts_av_parse_testconfig(const char *module, const char *testGroup,
                                     const char *testName, vtsL4AVTestConfiguration_t& testConfiguration)
 {
     ut_kvp_status_t status;
-    ut_kvp_instance_t* kvpTestInstance = (ut_kvp_instance_t*)pTestInstance;
-    char streamInputPath[UT_KVP_MAX_ELEMENT_SIZE] = {0};
     int32_t streamCount = 0;
-    std::filesystem::path fullPath;
 
-    const std::filesystem::path currentPath = std::filesystem::current_path();
+    ut_kvp_instance_t* kvpTestInstance = vts_kvp_create_instance(VTS_AV_TEST_CONFIG_PATH);
+    if(kvpTestInstance == nullptr)
+    {
+        UT_LOG_ERROR("Failed to create player configuration");
+        return UT_STATUS_FAILURE;
+    }
 
     const string testList = string(module) + "." + string(testGroup) + "." + string(testName);
     const string streamList = testList + "." + string("streams");
     const string controlParams = testList + "." + string("controls");
-
-    status = ut_kvp_getStringField(kvpTestInstance, STREAM_INPUT_PATH, streamInputPath, UT_KVP_MAX_ELEMENT_SIZE);
 
     /* Parse control parameters */
     string playDelay = controlParams + "." + string("delay_between_play");
@@ -110,10 +119,7 @@ UT_status_t vts_av_parse_testconfig(void* pTestInstance, const char *module, con
         char resultKVP[UT_KVP_MAX_ELEMENT_SIZE] = {0};
         string streamName = streamList + "." + to_string(i);
         status = ut_kvp_getStringField(kvpTestInstance, streamName.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
-        fullPath = currentPath;
-        fullPath.append(streamInputPath);
-        fullPath.append(resultKVP);
-        testConfiguration.testStreams.push_back(fullPath.string());
+        testConfiguration.testStreams.push_back(resultKVP);
     }
 
     int32_t trickModeCount = ut_kvp_getListCount(kvpTestInstance, trickModes.c_str());
@@ -150,6 +156,7 @@ UT_status_t vts_av_parse_testconfig(void* pTestInstance, const char *module, con
         else
         {
             UT_LOG_ERROR("Unknown trick mode action: %s", action);
+            vts_kvp_destroy_instance(kvpTestInstance);
             return UT_STATUS_FAILURE;
         }
 
@@ -186,9 +193,54 @@ UT_status_t vts_av_parse_testconfig(void* pTestInstance, const char *module, con
         testConfiguration.trickModes.push_back(trickMode);
     }
 
+    vts_kvp_destroy_instance(kvpTestInstance);
+
     return UT_STATUS_OK;
 }
 
+UT_status_t vts_av_parse_streamconfig(string stream, vtsL4AVStreamConfiguration_t& streamConfiguration)
+{
+    ut_kvp_status_t status;
+    char streamInputPath[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+    char resultKVP[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+
+    ut_kvp_instance_t* kvpTestInstance = vts_kvp_create_instance(VTS_AV_TEST_CONFIG_PATH);
+    if(kvpTestInstance == nullptr)
+    {
+        UT_LOG_ERROR("Failed to create stream configuration");
+        return UT_STATUS_FAILURE;
+    }
+
+    std::filesystem::path fullPath = std::filesystem::current_path();
+
+    status = ut_kvp_getStringField(kvpTestInstance, STREAM_INPUT_PATH, streamInputPath, UT_KVP_MAX_ELEMENT_SIZE);
+
+    string stream_info = string(STREAM_INFO) + "." + stream;
+    string stream_details = stream_info + "." + "input";
+
+    status = ut_kvp_getStringField(kvpTestInstance, stream_details.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+
+    fullPath.append(streamInputPath);
+    fullPath.append(resultKVP);
+    streamConfiguration.input = fullPath.string();
+
+    stream_details = stream_info + "." + "duration";
+    streamConfiguration.duration = ut_kvp_getUInt32Field(kvpTestInstance, stream_details.c_str());
+
+    stream_details = stream_info + "." + "audio_frames";
+    streamConfiguration.numOfAudioFrames = ut_kvp_getUInt32Field(kvpTestInstance, stream_details.c_str());
+
+    stream_details = stream_info + "." + "video_frames";
+    streamConfiguration.numOfVideoFrames = ut_kvp_getUInt32Field(kvpTestInstance, stream_details.c_str());
+
+    stream_details = stream_info + "." + "audio_error_frames";
+    streamConfiguration.numOfAudioErrorFrames = ut_kvp_getUInt32Field(kvpTestInstance, stream_details.c_str());
+
+    stream_details = stream_info + "." + "video_error_frames";
+    streamConfiguration.numOfVideoErrorFrames = ut_kvp_getUInt32Field(kvpTestInstance, stream_details.c_str());
+
+    return UT_STATUS_OK;
+}
 /** @} */ // End of AV_MODULE_HALTEST_L4_PARSE_TESTCONFIG
 /** @} */ // End of AV_MODULE_HALTEST_L4
 /** @} */ // End of AV_MODULE_HALTEST

@@ -116,6 +116,7 @@ typedef struct videoSinkMetrics
 } videoSinkMetrics_t;
 
 static vtsL4AVTestConfiguration_t gTestConfiguration;
+static vtsL4AVStreamConfiguration_t gStreamConfiguration;
 static vector<audioDecoderMetrics_t> gAudioDecoderMetrics;
 static audioDecoderMetrics_t gActualAudioDecoderMetrics;
 static vector<audioSinkMetrics_t> gAudioSinkMetrics;
@@ -474,7 +475,7 @@ class VTS_L4_AVMODULE : public UTCore
 
     void playWithTrickModes(std::string streamPath, std::vector<vtsL4TrickMode_t> trickModes)
     {
-        string playerName = vts_av_parse_get_palayer(gAVTestConfiguration, "AVModule");
+        string playerName = vts_av_parse_get_palayer("AVModule");
 
         mPlayer = VTSPlayer::create(playerName);
         if (!mPlayer)
@@ -563,18 +564,34 @@ class VTS_L4_AVMODULE : public UTCore
         mPlayer.reset();
     }
 
-    void startTest(void* pTestInstance, const char* moduleName, const char * testGroup, const char *testName, bool requireQualityCheck = false)
+    void startTest(const char* moduleName, const char * testGroup, const char *testName, bool requireQualityCheck = false)
     {
-        vts_av_parse_testconfig(pTestInstance, moduleName, testGroup, testName, gTestConfiguration);
+        UT_status_t status;
+        status = vts_av_parse_testconfig(moduleName, testGroup, testName, gTestConfiguration);
+
+        if(status != UT_STATUS_OK)
+        {
+            UT_LOG_INFO("Failed to parse the testconfiguration");
+            UT_ASSERT_TRUE(false);
+            return;
+        }
 
         for(auto& stream: gTestConfiguration.testStreams)
         {
+            status = vts_av_parse_streamconfig(stream, gStreamConfiguration);
+
+            if(status != UT_STATUS_OK)
+            {
+                UT_LOG_INFO("Failed to parse the streamconfiguration");
+                UT_ASSERT_TRUE(false);
+                return;
+            }
             /* Get the metrics before start of play */
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
 
-            UT_LOG_INFO("Testing Stream: %s", stream.c_str());
-            playWithTrickModes(stream, gTestConfiguration.trickModes);
+            UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
+            playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
 
             /* Get the metrics after start of play */
@@ -643,9 +660,9 @@ class VTS_L4_AVMODULE : public UTCore
 };
 
 /**
- * @brief Test the ability to play audio only file
+ * @brief Test the ability to play media file
  *
- * This test verifies the playback of simple audiostream.
+ * This test verifies the playback of media file
  *
  * **Test Group ID:** 04@n
  * **Test Case ID:** 001@n
@@ -653,30 +670,30 @@ class VTS_L4_AVMODULE : public UTCore
  * **Test Procedure:**
  * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
  */
-UT_ADD_TEST(VTS_L4_AVMODULE, audioOnlyPlay)
+UT_ADD_TEST(VTS_L4_AVMODULE, NoramlPlay)
 {
-    const char *testName = "audioOnlyPlay";
+    const char *testName = "NoramlPlay";
     bool requireQualityCheck = true;
 
-    startTest(gAVTestConfiguration, mModuleName, mTestGroup, testName, requireQualityCheck);
+    startTest(mModuleName, mTestGroup, testName, requireQualityCheck);
 }
 
 /**
- * @brief Test the ability to play audio only file
+ * @brief Test the ability to play media file with trick modes specified in configuration file
  *
- * This test verifies the playback of simple audiostream.
+ * This test verifies the playback of media file with trick modes specified in configuration file
  *
  * **Test Group ID:** 04@n
- * **Test Case ID:** 001@n
+ * **Test Case ID:** 002@n
  *
  * **Test Procedure:**
  * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
  */
-UT_ADD_TEST(VTS_L4_AVMODULE, audioOnlyTrickPlay)
+UT_ADD_TEST(VTS_L4_AVMODULE, playBackWithTrickModes)
 {
-    const char *testName = "audioOnlyTrickPlay";
+    const char *testName = "playBackWithTrickModes";
 
-    startTest(gAVTestConfiguration, mModuleName, mTestGroup, testName);
+    startTest(mModuleName, mTestGroup, testName);
 }
 
 /** @} */ // End of AV_MODULE_HALTEST_L4

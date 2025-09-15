@@ -74,6 +74,7 @@
 #define STREAM_DOWNLOAD_PATH "AVModule.stream_download_path"
 #define STREAM_INPUT_PATH "AVModule.input_streams_path"
 #define TEST_PLAYER "AVModule.player"
+#define STREAM_INFO "AVStreams"
 
 typedef enum vtsL4PlayerOperations
 {
@@ -100,8 +101,19 @@ typedef struct vtsL4AVTestConfiguration
 
 } vtsL4AVTestConfiguration_t;
 
-UT_status_t vts_av_parse_testconfig(void* pTestInstance, const char *module, const char *testGroup, const char *testName, vtsL4AVTestConfiguration_t& testConfiguration);
-std::string vts_av_parse_get_palayer(void* pTestInstance, const char *module);
+typedef struct vtsL4AVStreamConfiguration
+{
+    std::string input;
+    uint32_t duration;
+    uint32_t numOfAudioFrames;
+    uint32_t numOfVideoFrames;
+    uint32_t numOfAudioErrorFrames;
+    uint32_t numOfVideoErrorFrames;
+} vtsL4AVStreamConfiguration_t;
+
+UT_status_t vts_av_parse_testconfig(const char *module, const char *testGroup, const char *testName, vtsL4AVTestConfiguration_t& testConfiguration);
+std::string vts_av_parse_get_palayer(const char *module);
+UT_status_t vts_av_parse_streamconfig(std::string stream, vtsL4AVStreamConfiguration_t& streamConfiguration);
 
 #endif //__VTS_AV_PARSE_TEST_CONFIG_H__
 

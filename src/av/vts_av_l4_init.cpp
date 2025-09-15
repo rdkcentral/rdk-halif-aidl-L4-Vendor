@@ -63,23 +63,15 @@
  */
 
 #include "vts_av_l4_init.h"
-#include "vts_helper_functions.h"
 #include "vts_av_l4_parse_testconfig.h"
 
 using namespace std;
 
-void *gAVTestConfiguration = nullptr;
-
 UT_status_t VTS_AV_init()
 {
-    gAVTestConfiguration = vts_kvp_create_instance(VTS_AV_TEST_CONFIG_PATH);
-    if(gAVTestConfiguration == nullptr)
-    {
-        UT_LOG_ERROR("Failed to create player configuration");
-        return UT_STATUS_FAILURE;
-    }
 
-    string playerName = vts_av_parse_get_palayer(gAVTestConfiguration, "AVModule");
+
+    string playerName = vts_av_parse_get_palayer("AVModule");
 
     VTSPlayer::globalInit(playerName);
     return UT_STATUS_OK;
@@ -87,8 +79,7 @@ UT_status_t VTS_AV_init()
 
 void VTS_AV_destroy()
 {
-    string playerName = vts_av_parse_get_palayer(gAVTestConfiguration, "AVModule");
-    vts_kvp_destroy_instance(gAVTestConfiguration);
+    string playerName = vts_av_parse_get_palayer("AVModule");
     VTSPlayer::globalDeInit(playerName);
 }
 
