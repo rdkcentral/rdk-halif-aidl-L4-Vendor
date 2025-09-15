@@ -120,7 +120,6 @@ static vtsL4AVStreamConfiguration_t gStreamConfiguration;
 static vector<audioDecoderMetrics_t> gAudioDecoderMetrics;
 static audioDecoderMetrics_t gActualAudioDecoderMetrics;
 static vector<audioSinkMetrics_t> gAudioSinkMetrics;
-static audioSinkMetrics_t gActualAudioSinkMetrics;
 static vector<videoDecoderMetrics_t> gVideoDecoderMetrics;
 static videoDecoderMetrics_t gActualVideoDecoderMetrics;
 static vector<videoSinkMetrics_t> gVideoSinkMetrics;

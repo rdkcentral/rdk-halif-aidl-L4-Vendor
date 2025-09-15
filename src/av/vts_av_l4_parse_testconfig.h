@@ -39,7 +39,7 @@
  * @defgroup AV_MODULE_HALTEST_L4 AV Module HAL Tests L4 File
  * @{
  *
- * /
+ */
 
 /**
  * @defgroup AV_MODULE_HALTEST_L4_PARSE_TESTCONFIG_H Parse L4 av module test configuration
@@ -71,10 +71,10 @@
 #include <ut_log.h>
 #include "ut_kvp_profile.h"
 
-#define STREAM_DOWNLOAD_PATH "AVModule.stream_download_path"
-#define STREAM_INPUT_PATH "AVModule.input_streams_path"
-#define TEST_PLAYER "AVModule.player"
-#define STREAM_INFO "AVStreams"
+#define AVMODULE_STREAM_DOWNLOAD_PATH "AVModule.stream_download_path"
+#define AVMODULE_STREAM_INPUT_PATH "AVModule.input_streams_path"
+#define AVMODULE_TEST_PLAYER "AVModule.player"
+#define AVMODULE_STREAM_INFO "AVStreams"
 
 typedef enum vtsL4PlayerOperations
 {

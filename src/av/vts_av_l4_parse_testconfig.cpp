@@ -39,7 +39,7 @@
  * @defgroup AV_MODULE_HALTEST_L4 AV Module HAL Tests L4 File
  * @{
  *
- * /
+ */
 
 /**
  * @defgroup AV_MODULE_HALTEST_L4_PARSE_TESTCONFIG Parse L4 av module test configuration
@@ -81,7 +81,7 @@ std::string vts_av_parse_get_palayer(const char *module)
     char playerName[UT_KVP_MAX_ELEMENT_SIZE] = {0};
     std::string playerString;
 
-    status = ut_kvp_getStringField(kvpTestInstance, TEST_PLAYER, playerName, UT_KVP_MAX_ELEMENT_SIZE);
+    status = ut_kvp_getStringField(kvpTestInstance, AVMODULE_TEST_PLAYER, playerName, UT_KVP_MAX_ELEMENT_SIZE);
 
     playerString = playerName;
 
@@ -213,9 +213,9 @@ UT_status_t vts_av_parse_streamconfig(string stream, vtsL4AVStreamConfiguration_
 
     std::filesystem::path fullPath = std::filesystem::current_path();
 
-    status = ut_kvp_getStringField(kvpTestInstance, STREAM_INPUT_PATH, streamInputPath, UT_KVP_MAX_ELEMENT_SIZE);
+    status = ut_kvp_getStringField(kvpTestInstance, AVMODULE_STREAM_INPUT_PATH, streamInputPath, UT_KVP_MAX_ELEMENT_SIZE);
 
-    string stream_info = string(STREAM_INFO) + "." + stream;
+    string stream_info = string(AVMODULE_STREAM_INFO) + "." + stream;
     string stream_details = stream_info + "." + "input";
 
     status = ut_kvp_getStringField(kvpTestInstance, stream_details.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);

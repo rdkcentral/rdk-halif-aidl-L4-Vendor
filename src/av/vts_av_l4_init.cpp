@@ -39,7 +39,7 @@
  * @defgroup AV_MODULE_HALTEST_L4 AV Module HAL Tests L4 File
  * @{
  *
- * /
+ */
 
 /**
  * @defgroup AV_MODULE_HALTEST_L4_INIT Initializes L4 test av module test
