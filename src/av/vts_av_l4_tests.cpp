@@ -2,7 +2,7 @@
  * If not stated otherwise in this file or this component's LICENSE file the
  * following copyright and licenses apply:
  *
- * Copyright 2016 RDK Management
+ * Copyright 2025 RDK Management
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -566,6 +566,10 @@ class VTS_L4_AVMODULE : public UTCore
     void startTest(const char* moduleName, const char * testGroup, const char *testName, bool requireQualityCheck = false)
     {
         UT_status_t status;
+	// Clear testStreams to avoid accumulating streams from previous runs
+        gTestConfiguration.testStreams.clear();
+        gTestConfiguration.trickModes.clear();
+
         status = vts_av_parse_testconfig(moduleName, testGroup, testName, gTestConfiguration);
 
         if(status != UT_STATUS_OK)
@@ -669,9 +673,9 @@ class VTS_L4_AVMODULE : public UTCore
  * **Test Procedure:**
  * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
  */
-UT_ADD_TEST(VTS_L4_AVMODULE, NoramlPlay)
+UT_ADD_TEST(VTS_L4_AVMODULE, NormalPlay)
 {
-    const char *testName = "NoramlPlay";
+    const char *testName = "NormalPlay";
     bool requireQualityCheck = true;
 
     startTest(mModuleName, mTestGroup, testName, requireQualityCheck);
@@ -691,8 +695,9 @@ UT_ADD_TEST(VTS_L4_AVMODULE, NoramlPlay)
 UT_ADD_TEST(VTS_L4_AVMODULE, playBackWithTrickModes)
 {
     const char *testName = "playBackWithTrickModes";
+    bool requireQualityCheck = true;
 
-    startTest(mModuleName, mTestGroup, testName);
+    startTest(mModuleName, mTestGroup, testName, requireQualityCheck);
 }
 
 /** @} */ // End of AV_MODULE_HALTEST_L4
