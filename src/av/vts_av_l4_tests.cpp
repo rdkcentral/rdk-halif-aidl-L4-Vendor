@@ -563,10 +563,11 @@ class VTS_L4_AVMODULE : public UTCore
         mPlayer.reset();
     }
 
-    void startTest(const char* moduleName, const char * testGroup, const char *testName, bool requireQualityCheck = false)
+    void startTest(const char* moduleName, const char * testGroup, const char *testName)
     {
         UT_status_t status;
-	// Clear testStreams to avoid accumulating streams from previous runs
+        bool requireQualityCheck = false;
+        // Clear testStreams to avoid accumulating streams from previous runs
         gTestConfiguration.testStreams.clear();
         gTestConfiguration.trickModes.clear();
 
@@ -621,6 +622,7 @@ class VTS_L4_AVMODULE : public UTCore
             UT_ASSERT_TRUE(gBeforeSecureHeapMetrics.bytesUsed == gAfterSecureHeapMetrics.bytesUsed);
             UT_ASSERT_TRUE(gBeforeSecureHeapMetrics.bytesTotal == gAfterSecureHeapMetrics.bytesTotal);
 
+            requireQualityCheck = gTestConfiguration.userChoice;
             if(requireQualityCheck)
             {
                 bool response = validateTest("\nIs the stream playback good (Y/N)?");
@@ -676,9 +678,8 @@ class VTS_L4_AVMODULE : public UTCore
 UT_ADD_TEST(VTS_L4_AVMODULE, NormalPlay)
 {
     const char *testName = "NormalPlay";
-    bool requireQualityCheck = true;
 
-    startTest(mModuleName, mTestGroup, testName, requireQualityCheck);
+    startTest(mModuleName, mTestGroup, testName);
 }
 
 /**
@@ -695,9 +696,8 @@ UT_ADD_TEST(VTS_L4_AVMODULE, NormalPlay)
 UT_ADD_TEST(VTS_L4_AVMODULE, playBackWithTrickModes)
 {
     const char *testName = "playBackWithTrickModes";
-    bool requireQualityCheck = true;
 
-    startTest(mModuleName, mTestGroup, testName, requireQualityCheck);
+    startTest(mModuleName, mTestGroup, testName);
 }
 
 /** @} */ // End of AV_MODULE_HALTEST_L4

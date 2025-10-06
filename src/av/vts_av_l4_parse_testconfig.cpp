@@ -106,6 +106,7 @@ UT_status_t vts_av_parse_testconfig(const char *module, const char *testGroup,
         return UT_STATUS_FAILURE;
     }
 
+    testConfiguration.userChoice = ut_kvp_getBoolField(kvpTestInstance, AVMODULE_USER_CHOICE);
     const string testList = string(module) + "." + string(testGroup) + "." + string(testName);
     const string streamList = testList + "." + string("streams");
     const string controlParams = testList + "." + string("controls");

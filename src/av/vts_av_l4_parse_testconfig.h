@@ -74,6 +74,7 @@
 #define AVMODULE_STREAM_DOWNLOAD_PATH "AVModule.stream_download_path"
 #define AVMODULE_STREAM_INPUT_PATH "AVModule.input_streams_path"
 #define AVMODULE_TEST_PLAYER "AVModule.player"
+#define AVMODULE_USER_CHOICE "AVModule.userChoice"
 #define AVMODULE_STREAM_INFO "AVStreams"
 
 typedef enum vtsL4PlayerOperations
@@ -96,6 +97,7 @@ typedef struct vtsL4TrickMode
 typedef struct vtsL4AVTestConfiguration
 {
     uint32_t playDealy;
+    bool userChoice;
     std::vector<vtsL4TrickMode_t> trickModes;
     std::vector<std::string> testStreams;
 
