@@ -1,0 +1,66 @@
+include_0: av_test_configurations/vts_l4_av_stream_config.yaml
+AVModule:
+  stream_download_path: "http://<>/streams" #`URL` path to download the audio test streams
+  input_streams_path: "assets/streams/input" #Target path where input streams are stored
+  player: "gstreamer"
+  userChoice: true # true: Enable user choice quality check, false: Disable quality check
+  L4:
+    NormalPlay:
+      controls:
+        delay_between_play: 100 # Insert delay in msec between each test stream
+
+        # The 'trick_modes' field defines a sequence of playback control actions to be performed during AV testing.
+        # Each entry in the list specifies an action and its parameters.
+        # Supported trick_modes and their values:
+        # - action: play
+        #     Plays the stream at normal speed.
+        #     duration: <int> (seconds to play), value 2147483647 used (as ut_core doesnt support signed read) for full length
+        # - action: seek
+        #     Seeks to a specific position in the stream.
+        #     duration: <int> (seconds to wait after seek)
+        #     mention either one of the following:
+        #     position_fwd: <int> (seek forward to this position in ms)
+        #     position_bwd: <int> (seek backward to this position in ms)
+        # - action: trick_mode
+        #     Changes playback speed for fast-forward or rewind.
+        #     duration: <int> (seconds to play at this speed)
+        #     speed: <float> (e.g., 2.0 for 2x, 0.5 for half speed)
+        # Example usage:
+        #   - action: play
+        #     duration: 20
+        #   - action: seek
+        #     duration: 10
+        #     position_fwd: 60000
+        #   - action: trick_mode
+        #     duration: 15
+        #     speed: 2.0
+        trick_modes:
+          - action: play
+            duration: 2147483647
+      streams:
+        - test_001_mp4
+    playBackWithTrickModes:
+      controls:
+        delay_between_play: 100
+        trick_modes:
+          - action: play
+            duration: 20
+          - action: seek
+            duration: 20
+            position: 30000
+          - action: trick_mode
+            duration: 20
+            speed: 2.0
+          - action: trick_mode
+            duration: 20
+            speed: 1.0
+          - action: trick_mode
+            duration: 20
+            speed: 0.5
+          - action: trick_mode
+            duration: 20
+            speed: 1.0
+          - action: play
+            duration: 2147483647 # Full length
+      streams:
+        - test_001_mp4
