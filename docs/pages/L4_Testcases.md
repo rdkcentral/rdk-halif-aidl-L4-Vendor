@@ -5,9 +5,16 @@
 - [Overview](#overview)
 - [AV Playback with Secure/non-secure](#10-av-playback-with-secure-and-non-secure)
   - [Normal playback](#11-normal-playback)
+    - [Baseline AV Playback HD](#baseline-av-playback-hd)
+    - [HDR Metadata Propagation](#hdr-metadata-propagation)
+    - [Pixel Format Coverage](#pixel-format-coverage)
+    - [Interlaced Signaling](#interlaced-signaling)
+    - [Low Bitrate](#low-bitrate)
+    - [Adaptive Bitrate (ABR) streaming](#adaptive-bitrate-abr-streaming)
   - [Pause / Resume, Trick Modes and Seek](#12-pause-resume-trick-modes-and-seek)
-  - [Robustness & Error Handling ](#13-robustness-and-error-handling)
-  - [Performance & Longevity](#14-performance-and-longevity)
+  - [AV Synchronization](#13-av-synchronization)
+  - [Robustness & Error Handling](#14-robustness-and-error-handling)
+  - [Performance & Longevity](#15-performance-and-longevity)
 - [Audio only Playback with Secure/non-secure](#20-audio-only-playback-with-secure-and-non-secure)
   - [Normal playback](#21-normal-playback)
   - [Pause / Resume, Trick Modes and Seek](#22-pause-resume-trick-modes-and-seek)
@@ -15,32 +22,36 @@
 - [Video only Playback with Secure/non-secure](#30-video-only-playback-with-secure-and-non-secure)
   - [Normal playback](#31-normal-playback)
   - [Pause / Resume, Trick Modes and Seek](#32-pause-resume-trick-modes-and-seek)
-  - [Robustness & Error Handling ](#33-robustness-and-error-handling)
-  - [Performance & Longevity](#34-performance-and-longevity)
-- [Validations methods](#validations-methods)
+  - [Robustness & Error Handling](#33-robustness-and-error-handling)
+- [Validation Methods](#validation-methods)
 
 ## Overview
 
-This document defines the test plan for a comprehensive media validation suite for L4, to be executed in multiple phases.
+This document defines a comprehensive media validation test plan for L4, designed to be executed in multiple phases.
 
-The RDK Media Stack Architecture provides the foundation for these tests [L4 VTS Arc](https://github.com/rdkcentral/rdk-halif-aidl-L4-Vendor/wiki)
+The RDK Media Stack Architecture provides the foundation for these tests: [L4 VTS Architecture](https://github.com/rdkcentral/rdk-halif-aidl-L4-Vendor/wiki)
 
-Current Scope (Phase 1): Foundational test coverage for H.264 video and AAC audio.
+**Current Scope (Phase 1 & Phase 2):** Foundational test coverage for [video](https://github.com/rdkcentral/rdk-halif-aidl/blob/develop/videodecoder/current/com/rdk/hal/videodecoder/Codec.aidl) & [audio](https://github.com/rdkcentral/rdk-halif-aidl/blob/develop/audiodecoder/current/com/rdk/hal/audiodecoder/Codec.aidl) codecs and advanced features (HDR10, HLG, Dolby Vision).
 
-Future Phases: Will expand to include HEVC,VP9, AV1, advanced features (HDR, Dolby Vision), and more.
+**Future Phases:** Will expand to include:
 
-The [Validation Methods](#validations-methods) outlined are common for all test cases, ensuring a consistent standard of quality and performance verification.
-<br>This document will be updated as new phases are initiated.
+- Video plane mapping with source types, plane geometry (X, Y, WIDTH, HEIGHT), z-order management, alpha blending, and multi-plane scenarios (main + PIP video swapping)
+- Multi-input audio mixing (concurrent stream processing), volume control (setVolume, getVolume), mute state management, volume ramping (setVolumeRamp), Audio Passthrough, Audio output port enumeration and configuration.
+- Native graphics window handle integration with EGL display for compositor testing
 
-This test plan is structured around three primary use cases to ensure comprehensive validation of the media pipeline:
+This document will be updated as new phases are initiated.
 
-- **Normal Playback:** Verifies that various audio and video streams can be decoded and rendered correctly under standard conditions. This includes a wide range of resolutions, frame rates, codecs, and stream structures.
+The [Validation Methods](#validation-methods) outlined are common to all test cases, ensuring consistent quality and performance verification standards across the test suite.
 
-- **Pause / Resume Trick Modes & Seeking:** Ensures that user-initiated actions like fast-forward, rewind, pause, resume, and seeking are handled smoothly, accurately, and without visual or audible corruption.
+This test plan is structured around primary use cases to ensure comprehensive validation of the media pipeline:
 
-- **Robustness, Error Handling, and Performance:** Tests the resilience of the decoder when presented with malformed or incomplete streams and validates system stability during long-duration playback sessions.
+- **Normal Playback:** Verifies that various audio and video streams are decoded and rendered correctly under standard conditions. This includes baseline codec validation([Acodec](https://github.com/rdkcentral/rdk-halif-aidl/blob/develop/audiodecoder/current/com/rdk/hal/audiodecoder/Codec.aidl), [VCodec](https://github.com/rdkcentral/rdk-halif-aidl/blob/develop/videodecoder/current/com/rdk/hal/videodecoder/Codec.aidl)) , HDR metadata propagation (HDR10, HLG), pixel format handling (YUV420p, YUV422p, YUV444p), interlaced signaling, low bitrate scenarios, and adaptive bitrate (ABR) streaming with dynamic resolution/bitrate switching.
 
-*Note: Full test case list and streams used for tests will be available at [Testcases](https://github.com/rdkcentral/rdk-halif-aidl-unified-vts/tree/main/host/tests/TestCases).*
+- **Pause / Resume, Trick Modes & Seeking:** Ensures that user-initiated controls (fast-forward, rewind, pause, resume, and seeking) are handled smoothly and accurately without introducing visual artifacts or audio glitches.
+
+- **AV Synchronization:** Validates audio-video synchronization accuracy and measures drift over extended playback periods to ensure lip-sync is maintained within acceptable tolerances.
+
+- **Robustness, Error Handling, and Performance:** Tests decoder resilience when processing malformed or incomplete streams, and validates system stability during extended playback sessions.
 
 *Note: Stream-to-Stream ID mapping is available in [Stream Catalog](Stream_Catalog.md).*
 
@@ -48,12 +59,12 @@ This test plan is structured around three primary use cases to ensure comprehens
 
 ### 1.1 Normal playback
 
-**Objective:**
-<br> Validate video and audio playback with varying parameters:
+#### Baseline AV Playback HD
 
-- **Video:** Resolution, Dynamic Range, Color Space, Bit Depth, Frame Rate, Pixel Format, Bitrate.
-- **Audio:** Sample Rate, Number of Channels, Bitrate.
-<br>EX:
+**Purpose:**
+Validate complete decoder lifecycle including open/start/decode/queue operations, callback handling, stop/flush/EOS sequences, and basic audio-video synchronization.
+
+**List of Streams:**
 
 | TC ID | Codec | Stream | Stream ID | Wrapper Requirements Exercised |
 | ---------------------- | --------- | -------- | --------------------------------- | --------------------------------- |
@@ -146,7 +157,10 @@ Validate seamless bitrate and resolution switching(Dynamic Resolution Switching)
 
 ### 1.2 Pause Resume Trick Modes and Seek
 
-**Objective**:<br> Validate trick modes and seeking with minimal frame drops and accurate FrameMetadata reporting.
+**Purpose:**
+Validate pause, resume, fast-forward, rewind, and seek operations with minimal frame drops and accurate FrameMetadata reporting throughout all operations.
+
+**List of Streams:**
 
 | TC ID | Codec | Stream | Stream ID | Wrapper Requirements Exercised |
 | ---------------------- | ----------- | -------- | -------------------------------- | -------------------------------- |
@@ -158,7 +172,12 @@ Validate seamless bitrate and resolution switching(Dynamic Resolution Switching)
 
 ---
 
-### 1.3 Robustness and Error Handling
+### 1.3 AV Synchronization
+
+**Purpose:**
+Validate audio-video synchronization accuracy and measure drift over extended playback periods to ensure lip-sync is maintained within acceptable tolerances.
+
+**List of Streams:**
 
 | TC ID | Codec | Stream | Stream ID | Wrapper Requirements Exercised |
 | -------------------- | ------------- | -------- | -------------------------------- | -------------------------------- |
@@ -193,9 +212,12 @@ Validate the player's resilience when processing corrupted streams. This ensures
 
 ---
 
-### 1.4 Performance and Longevity
+### 1.5 Performance and Longevity
 
-**Objective**: <br> Validate long-duration playback and performance.
+**Purpose:**
+Validate decoder stability, memory management, and performance consistency(No A/V drift) during extended playback sessions. Ensure no resource leaks or performance degradation over time.
+
+**List of Streams:**
 
 | TC ID | Codec | Stream | Stream ID | Duration | Expected Result |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -210,11 +232,10 @@ Validate the player's resilience when processing corrupted streams. This ensures
 
 ### 2.1 Normal Playback
 
-**Objective**: <br> Validate only audio playback across codecs, sample rates, and channel configurations.
+**Purpose:**
+Validate audio-only decode pipeline including buffer queueing, flushing, EOS handling, and decoder state transitions across various audio codecs and sample rates.
 
-| **TC ID**        | **Audio Codec**     | **Sample Rate (Hz)** |  **Channels** | **Expected Result**              |
-| -----------------| ------------------- | -------------------- | ------------  | -------------------------------- |
-| VTS_L4_AAC-101   | AAC-LC              | 44.1k                | Stereo        | Smooth playback, no glitches     |
+**List of Streams:**
 
 | TC ID | Audio Codec | Stream | Stream ID | Wrapper Requirements Exercised |
 | ------------------- | ------------ | --------- | -------------------------------- | -------------------------------- |
@@ -232,7 +253,8 @@ Validate the player's resilience when processing corrupted streams. This ensures
 
 ### 2.2 Pause Resume Trick Modes and Seek
 
-**Objective**:<br> Validate audio trick modes and pause/resume behavior.
+**Purpose:**
+Validate audio-only pause, resume, seek, and trick mode operations ensuring smooth transitions without audio pops, clicks, or buffer underruns.
 
 **List of Streams:**
 
@@ -246,7 +268,10 @@ Validate the player's resilience when processing corrupted streams. This ensures
 
 ### 2.3 Robustness, Error Handling and Performance
 
-**Objective**: <br>Validate edge cases for audio playback.
+**Purpose:**
+Validate audio decoder resilience when processing corrupted or malformed audio streams. Ensure graceful error handling without crashes or audio pipeline stalls.
+
+**List of Streams:**
 
 **AAC Error Streams:**
 
@@ -276,8 +301,10 @@ Validate the player's resilience when processing corrupted streams. This ensures
 
 ### 3.1 Normal Playback
 
-**Objective**:
-Validate video-only playback across codecs, resolutions, frame rates, and dynamic ranges (no audio pipeline active).
+**Purpose:**
+Validate video-only decode pipeline across various codecs, resolutions, and HDR modes without audio track dependencies.
+
+**List of Streams:**
 
 | TC ID | Video Codec | Stream | Stream ID | Wrapper Requirements Exercised |
 | ----------------- | ------------ | --------- | -------------------------------- | -------------------------------- |
@@ -291,8 +318,8 @@ Validate video-only playback across codecs, resolutions, frame rates, and dynami
 
 ### 3.2 Pause Resume Trick Modes and Seek
 
-**Objective**:
-Validate smooth handling of video-only trick modes without audio.
+**Purpose:**
+Validate video-only pause, resume, seek, and trick mode operations with accurate frame navigation and proper decoder state management without audio synchronization dependencies.
 
 **List of Streams:**
 
@@ -308,15 +335,10 @@ Validate smooth handling of video-only trick modes without audio.
 
 ### 3.3 Robustness and Error Handling
 
-**Objective**:
-Validate resilience of video-only playback under error or malformed conditions.
+**Purpose:**
+Validate video decoder resilience when processing corrupted video-only streams. Ensure graceful error handling, proper error reporting, and recovery without system crashes or hangs.
 
-| **TC ID**       | **Error Condition**             | **Expected Result** |
-| ----------------| --------------------------------| ------------------- |
-| VTS_L4_H264-VID301 | Missing audio track            | Video plays smoothly without crash |
-| VTS_L4_H264-VID302 | Corrupt I-frame                | Brief artifact, recovers at next I-frame |
-| VTS_L4_H264-VID303 | Truncated video stream         | Clean EOS, no freeze |
-| VTS_L4_H264-VID304 | Corrupt video metadata (PTS)   | Graceful handling, no crash |
+**List of Streams:**
 
 | TC ID | Error Condition | Stream | Stream ID | Expected Behavior |
 | ---------------------- | ---------------------------- | ------- | ----------------- | ----------------- |
@@ -354,8 +376,7 @@ Validate resilience of video-only playback under error or malformed conditions.
 | VTS_L4_VP9_ERR_1703 | Resolution change stress | vts_vp9_1080p_sdr_30.0f_BT2020_yuv420p_vp9_resolution_change_stress_18M_a0_v1800_60sec.webm | VTS_SID_080 | Dynamic resolution handling |
 | VTS_L4_VP9_ERR_1704 | Loop filter corruption | vts_vp9_1080p_sdr_30.0f_BT2020_yuv420p_vp9_loop_filter_max_18M_a0_v1800_60sec.webm | VTS_SID_078 | Filter parameter error handled |
 
-**Objective**:
-Validate long-duration stability of video-only playback.
+**H.265 Error Streams:**
 
 | TC ID | Error Condition | Stream | Stream ID | Expected Behavior |
 | ---------------------- | ---------------------------- | ------- | ----------------- | ----------------- |
@@ -366,29 +387,53 @@ Validate long-duration stability of video-only playback.
 
 ---
 
-## Validations methods
+## Validation Methods
+
+The following validation methods are applied consistently across all test cases to ensure comprehensive quality and performance verification.
 
 ### 1. Metrics Validation
 
-If playback metrics are available, Verify key performance indicators against the stream configuration file:
+When playback metrics are available, verify key performance indicators against expected values defined in the stream configuration file:
 
-- **Frame Counts:** decoded, received, presented, repeated, error, underflow, and dropped.
-
-- **Synchronization:** A/V sync accuracy and drift over time.
+- **Frame Counts:** Validate decoded, received, presented, repeated, error, underflow, and dropped frame counts.
+- **Synchronization:** Measure A/V sync accuracy and No drift over time.
+- **Performance:** Monitor CPU/memory usage, decoder throughput, and buffer utilization.
 
 ### 2. Event & Metadata Validation
 
-Register listeners for key playback events to validate stream integrity
+Register listeners for critical playback events to validate stream integrity and proper callback handling:
 
-- `onFirstFrameRendered`, `onDecodeError`, `onEndOfStream`, `onAudioUnderflow`, `onVideoUnderflow`, `onAudioResumed` `onVideoResumed`,
+**Events:**
 
-Cross-check these with the expected values in the stream configuration file.
+- `onFirstFrameRendered` - Confirms first frame presentation
+- `onDecodeError` - Reports decoding errors with error codes
+- `onEndOfStream` - Signals proper EOS handling
+- `onAudioUnderflow` / `onVideoUnderflow` - Detects buffer starvation
+- `onAudioResumed` / `onVideoResumed` - Confirms recovery from underflow
+
+**Metadata Validation:**
+
+- Verify FrameMetadata fields (resolution, frame rate, color space, HDR mode, pixel format)
+- Cross-check metadata values against stream configuration file
+- Validate metadata consistency throughout playback
 
 ### 3. Playback Quality Validation
 
-Validate subjective playback quality (e.g., free of visible or audible artifacts).
-This step will be automated using **Raft**.
+Validate subjective playback quality to ensure content is free from visual or audible artifacts:
 
-**Note**:
-Input streams may use different container formats (.mp4, .ts, .webm). If required, adaptive bitrate (ABR) formats such as HLS and MPEG-DASH will also be tested.
-required, adaptive bitrate (ABR) formats such as HLS and MPEG-DASH will also be tested.
+- **Visual Quality:** No blocking, tearing, color banding, or synchronization issues
+- **Audio Quality:** No pops, clicks, distortion, or sync drift
+- **Automation:** Quality validation will be automated using **Raft** framework
+
+### 4. Robustness Validation
+
+For error handling tests:
+
+- Verify no system crashes or hangs when processing corrupted streams
+- Confirm error callbacks are triggered with appropriate error codes
+- Validate graceful recovery and continuation of playback where possible
+
+---
+
+**Note:**
+Input streams utilize various container formats (.mp4, .ts, .webm). Future test phases may include adaptive bitrate (ABR) formats such as HLS and MPEG-DASH.
