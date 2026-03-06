@@ -5,9 +5,16 @@
 - [Overview](#overview)
 - [AV Playback with Secure/non-secure](#10-av-playback-with-secure-and-non-secure)
   - [Normal playback](#11-normal-playback)
+    - [Baseline AV Playback HD](#baseline-av-playback-hd)
+    - [HDR Metadata Propagation](#hdr-metadata-propagation)
+    - [Pixel Format Coverage](#pixel-format-coverage)
+    - [Interlaced Signaling](#interlaced-signaling)
+    - [Low Bitrate](#low-bitrate)
+    - [Adaptive Bitrate (ABR) streaming](#adaptive-bitrate-abr-streaming)
   - [Pause / Resume, Trick Modes and Seek](#12-pause-resume-trick-modes-and-seek)
-  - [Robustness & Error Handling ](#13-robustness-and-error-handling)
-  - [Performance & Longevity](#14-performance-and-longevity)
+  - [AV Synchronization](#13-av-synchronization)
+  - [Robustness & Error Handling](#14-robustness-and-error-handling)
+  - [Performance & Longevity](#15-performance-and-longevity)
 - [Audio only Playback with Secure/non-secure](#20-audio-only-playback-with-secure-and-non-secure)
   - [Normal playback](#21-normal-playback)
   - [Pause / Resume, Trick Modes and Seek](#22-pause-resume-trick-modes-and-seek)
@@ -15,112 +22,207 @@
 - [Video only Playback with Secure/non-secure](#30-video-only-playback-with-secure-and-non-secure)
   - [Normal playback](#31-normal-playback)
   - [Pause / Resume, Trick Modes and Seek](#32-pause-resume-trick-modes-and-seek)
-  - [Robustness & Error Handling ](#33-robustness-and-error-handling)
-  - [Performance & Longevity](#34-performance-and-longevity)
-- [Validations methods](#validations-methods)
+  - [Robustness & Error Handling](#33-robustness-and-error-handling)
+- [Validation Methods](#validation-methods)
 
 ## Overview
 
-This document defines the test plan for a comprehensive media validation suite for L4, to be executed in multiple phases.
+This document defines a comprehensive media validation test plan for L4, designed to be executed in multiple phases.
 
-The RDK Media Stack Architecture provides the foundation for these tests [L4 VTS Arc](https://github.com/rdkcentral/rdk-halif-aidl-L4-Vendor/wiki)
+The RDK Media Stack Architecture provides the foundation for these tests: [L4 VTS Architecture](https://github.com/rdkcentral/rdk-halif-aidl-L4-Vendor/wiki)
 
-Current Scope (Phase 1): Foundational test coverage for H.264 video and AAC audio.
+**Current Scope (Phase 1 & Phase 2):** Foundational test coverage for [video](https://github.com/rdkcentral/rdk-halif-aidl/blob/develop/videodecoder/current/com/rdk/hal/videodecoder/Codec.aidl) & [audio](https://github.com/rdkcentral/rdk-halif-aidl/blob/develop/audiodecoder/current/com/rdk/hal/audiodecoder/Codec.aidl) codecs and advanced features (HDR10, HLG, Dolby Vision).
 
-Future Phases: Will expand to include HEVC,VP9, AV1, advanced features (HDR, Dolby Vision), and more.
+**Future Phases:** Will expand to include:
 
-The [Validation Methods](#validations-methods) outlined are common for all test cases, ensuring a consistent standard of quality and performance verification.
-<br>This document will be updated as new phases are initiated.
+- Video plane mapping with source types, plane geometry (X, Y, WIDTH, HEIGHT), z-order management, alpha blending, and multi-plane scenarios (main + PIP video swapping)
+- Multi-input audio mixing (concurrent stream processing), volume control (setVolume, getVolume), mute state management, volume ramping (setVolumeRamp), Audio Passthrough, Audio output port enumeration and configuration.
+- Native graphics window handle integration with EGL display for compositor testing
 
-This test plan is structured around three primary use cases to ensure comprehensive validation of the media pipeline:
+This document will be updated as new phases are initiated.
 
-- **Normal Playback:** Verifies that various audio and video streams can be decoded and rendered correctly under standard conditions. This includes a wide range of resolutions, frame rates, codecs, and stream structures.
+The [Validation Methods](#validation-methods) outlined are common to all test cases, ensuring consistent quality and performance verification standards across the test suite.
 
-- **Pause / Resume Trick Modes & Seeking:** Ensures that user-initiated actions like fast-forward, rewind, pause, resume, and seeking are handled smoothly, accurately, and without visual or audible corruption.
+This test plan is structured around primary use cases to ensure comprehensive validation of the media pipeline:
 
-- **Robustness, Error Handling, and Performance:** Tests the resilience of the decoder when presented with malformed or incomplete streams and validates system stability during long-duration playback sessions.
+- **Normal Playback:** Verifies that various audio and video streams are decoded and rendered correctly under standard conditions. This includes baseline codec validation([Acodec](https://github.com/rdkcentral/rdk-halif-aidl/blob/develop/audiodecoder/current/com/rdk/hal/audiodecoder/Codec.aidl), [VCodec](https://github.com/rdkcentral/rdk-halif-aidl/blob/develop/videodecoder/current/com/rdk/hal/videodecoder/Codec.aidl)) , HDR metadata propagation (HDR10, HLG), pixel format handling (YUV420p, YUV422p, YUV444p), interlaced signaling, low bitrate scenarios, and adaptive bitrate (ABR) streaming with dynamic resolution/bitrate switching.
 
-*Note: Full test case list and streams used for tests will be available at [Testcases](https://github.com/rdkcentral/rdk-halif-aidl-unified-vts/tree/main/host/tests/TestCases).*
+- **Pause / Resume, Trick Modes & Seeking:** Ensures that user-initiated controls (fast-forward, rewind, pause, resume, and seeking) are handled smoothly and accurately without introducing visual artifacts or audio glitches.
+
+- **AV Synchronization:** Validates audio-video synchronization accuracy and measures drift over extended playback periods to ensure lip-sync is maintained within acceptable tolerances.
+
+- **Robustness, Error Handling, and Performance:** Tests decoder resilience when processing malformed or incomplete streams, and validates system stability during extended playback sessions.
 
 ## 1.0 AV Playback with Secure and Non-secure
 
 ### 1.1 Normal playback
 
-**Objective:**
-<br> Validate video and audio playback with varying parameters:
+#### Baseline AV Playback HD
 
-- **Video:** Resolution, Dynamic Range, Color Space, Bit Depth, Frame Rate, Pixel Format, Bitrate.
-- **Audio:** Sample Rate, Number of Channels, Bitrate.
-<br>EX:
+**Purpose:**
+Validate complete decoder lifecycle including open/start/decode/queue operations, callback handling, stop/flush/EOS sequences, and basic audio-video synchronization.
 
-| **TC ID**        | **Video Codec**|**Audio Codec**| **Resolution**  | **Dynamic Range**| **ColorSpace**|**Depth**|**Frame Rate** |**Pixel Format**| **Bitrate (Mbps)** |  **Expected Result**|
-| -----------------| ---------------|---------------|---------------- | ---------------- | --------------| --------| --------------| ----------------|------------------- |  ------------------ |
-| VTS_L4_H264_AAC1001  |H264            |AAC            |1920x1080 (FHD)  | SDR              | BT.709        |8bit    |60p            | YUV420          |12                  | Smooth playback, No AV drift, no frame drops, correct metadata,If unsupported, the decoder should fail gracefully without crashes.|
-| VTS_L4_H264_AC32002  |H264            |DOLBY_AC3    |1920x1080 (FHD)  | SDR              | BT.709        |10bit    |60p            | YUV420          |12                  | Smooth playback, No AV drift, no frame drops, correct metadata,If unsupported, the decoder should fail gracefully without crashes.|
-| VTS_L4_H265_AC31001  |H265            |DOLBY_AC3    |3840x2160      | HDR              | BT.2020        |10bit    |60p            | YUV420          |18                  | Smooth playback, No AV drift, no frame drops, correct metadata,If unsupported, the decoder should fail gracefully without crashes.|
+**List of Streams:**
+
+| TC ID                 |   Codec   | Stream |  Wrapper Requirements Exercised |
+| ----------------------| --------- |--------|---------------------------------|
+| VTS_L4_H264_AC3_1001  | H264 AC3  | vts_h264_1080p_sdr_60.0f_BT709_yuv420p_8M_ac3_48k_6ch_512k_a1875_v3600_60sec.mp4 | Decoder lifecycle, buffer flow, EOS, VideoSink AV Sync |
+| VTS_L4_H265_EAC3_1001 | H265 EAC3 | vts_h265_1080i_sdr_60.0f_BT709_yuv420p_8M_eac3_48k_6ch_512k_a1875_v3599_60sec.mp4|Same as above + codec selection |
+| VTS_L4_MPEG2_AAC_1001 | MPEG2 AAC | vts_mpeg2_1080p_sdr_60.0f_BT709_yuv420p_20M_aac_48k_6ch_256k_a2814_v3600_60sec.mp4| Legacy codec path, interop correctness |
+| VTS_L4_VP9_AAC_1001   | VP9 AAC   | vts_vp9_1080p_sdr_60.0f_BT709_yuv420p_15M_aac_48k_2ch_512k_a2814_v3600_60sec.mp4 | Non-MPEG codec negotiation |
+| VTS_L4_AV1_AAC_1001   | AV1 AAC   | vts_av1_1080p_sdr_30.0f_BT709_yuv420p_10M_aac_48k_2ch_256k_a2814_v1800_60sec.mp4 | New codec path, capability reporting |
 
 ---
 
-| #|Test Dimension | Comments |
-|--|---------------|----------|
-| 1 | Video Codec | Test every codec which the platform capabilities report. <br> Test unsupported codecs to check for errors. <br > [list of Video Codec](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.7.1/videodecoder/current/com/rdk/hal/videodecoder/Codec.aidl)|
-| 2 | Audio Codec | Test every codec which the platform capabilities report. <br> Test unsupported codecs to check for errors. <br > [list of Audio Codec](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.7.1/audiodecoder/current/com/rdk/hal/audiodecoder/Codec.aidl)|
-| 3 | Resolution | Test all Viper resolutions: <br> - 3840x2160 <br> - 2560x1440 <br> - 1920x1080 <br> - 1280x720 <br> - 960x540 <br> - 640x360 <br> - 320x240 <br> YouTube portrait mode videos from phones. <br> YouTube adds: <br> - 426x240 <br> - 7680x4320 (8K) |
-| 4 | Dynamic range | - SDR <br> - HLG <br> - HDR10 <br> - HDR10+ <br> - Dolby Vision <br>[list of Dynamic range](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.7.1/videodecoder/current/com/rdk/hal/videodecoder/DynamicRange.aidl)|
-| 5 | Color space | - BT.601 <br> - BT.709 <br> - BT.2020 |
-| 6 | Frame rate | Frame Rates: 23.976, 24, 25, 29.97, 30, 50, 59.94, 60 |
-| 7 | Frame types | Progressive and interlaced frame types. |
-| 8 | Pixel format | - YCbCr4:4:4 <br> - YCbCr4:2:2 <br> - YCbCr4:2:0 <br>[list of Pixel format](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.7.1/videodecoder/current/com/rdk/hal/videodecoder/PixelFormat.aidl) |
-| 9 | Bit rates | Viper bitrates (UK): 18000, 12200, 5800, 4250, 1850, 1200, 500 <br> Check the maximum bit rates supported by codec/profile/level |
-| 10 | Reference frames | Single reference frames are passed for decode and are expected to be output immediately. |
-| 11 | GOP structure | Open GOPs <br> Closed GOPs <br> Min and max M and N for each supported codec/profile/level |
-| 12 | Active Format Description | Test all AFD codes appear in FrameMetadata. <br> Complete list of AFD codes |
-| 13 | Resolution switching | Moving between different resolution encodings, without breaking GOP sequences. |
-| 14 | Aspect ratio switching | Picture aspect ratios must be reported correctly in FrameMetadata. <br> Pixel aspect ratios must be reported correctly in FrameMetadata. |
+#### HDR Metadata Propagation
+
+**Purpose:**
+Validate proper propagation of DynamicRange and ColorPrimaries metadata via FrameMetadata callbacks. This test focuses on metadata accuracy, not subjective picture quality.
+
+**List of Streams:**
+
+| TC ID                |  HDR Mode   |   Stream   |  Wrapper Requirements Exercised    |
+| -------------------- | ------------|------------|------------------------------------|
+| VTS_L4_HDR10_2001    | HDR10       | vts_h265_2160p_hdr10_60.0f_BT2020_yuv420p_60M_eac3_48k_6ch_512k_a1875_v3600_60sec.mp4 | HDR enum mapping, BT.2020 metadata, UHD timing  |
+| VTS_L4_HDR10P_2001   | HDR10+      | vts_h265_2160p_hdr10plus_60.0f_BT2020_yuv420p_60M_eac3_48k_6ch_512k_a1875_v3600_60sec.mp4| HDR10+ dynamic metadata propagation|
+| VTS_L4_HLG_2001      | HLG         | vts_h265_2160p_hlg_60.0f_BT2020_yuv420p_60M_ac3_48k_6ch_512k_a1875_v3600_60sec.mp4 | Alternate HDR mode propagation |
+| VTS_L4_SDR_2001      | SDR         | vts_vp9_2160p_sdr_60.0f_BT2020_yuv420p_20M_opus_48k_6ch_512k_a3001_v3600_61sec.webm | 4K UHD SDR decode with YUV420p, VP9 WebM container handling |
+| VTS_L4_DVISION_2001  | Dolby Vision| vts_h265_2160p_dolby_vision_60.0f_BT2020_yuv420p_20M_eac3_48k_6ch_512k_a3001_v3600_61sec.mp4 | Dolby Vision metadata propagation, dual-layer enhancement handling, BT.2020 UHD timing |
+
+---
+
+#### Pixel Format Coverage
+
+**Purpose:**
+Validate correct handling of various pixel formats to detect issues in format negotiation, buffer layout, and sink compatibility.
+
+**List of Streams:**
+
+| TC ID              | Pixel Format | Stream | Wrapper Requirements Exercised |
+| -------------------|--------------|--------|--------------------------------|
+| VTS_L4_YUV422_3001 | YUV422       | vts_h265_2160p_hdr10_60.0f_BT2020_yuv422p_25M_a0_v3600_60sec.mp4 | Non-420 buffer handling, surface negotiation |
+| VTS_L4_YUV444_3001 | YUV444       | vts_av1_1080p_sdr_60.0f_BT709_yuv444p_12M_aac_48k_2ch_256k_a2814_v3600_60sec.mp4 | Rare format path, buffer size/layout correctness |
+
+---
+
+#### Interlaced Signaling
+
+**Purpose:**
+Validate correct scan type signaling and decoder state stability when handling interlaced content. This test focuses on metadata accuracy, not deinterlacing quality.
+
+**List of Streams:**
+
+| TC ID              | Scan Type   | Stream | Wrapper Requirements Exercised |
+| -------------------|------------ |--------|--------------------------------|
+| VTS_L4_1080i_4001  |1080i MPEG-2 | vts_mpeg2_1080i_sdr_60.0f_BT709_yuv420p_20M_aac_48k_6ch_256k_a2814_v3600_60sec.mp4 | Interlaced metadata, timing |
+| VTS_L4_1080i_4002  | 1080i H.264 | vts_h264_1080i_sdr_29.97f_BT709_yuv420p_5M_ac3_48k_6ch_256k_a1875_v1797_60sec.mp4 | Interlaced handling in modern codec |
+
+---
+
+#### Low Bitrate
+
+**Purpose:**
+Validate decoder behavior under constrained data rates, including buffer queueing, underflow tolerance, and proper EOS handling.
+
+**List of Streams:**
+
+| TC ID                 | Codec     | Stream | Wrapper Requirements Exercised   |
+| ----------------------|-----------|--------| ---------------------------------|
+| VTS_L4_H264_AAC_5001  | H.264 AAC | vts_h264_480p_sdr_24.0f_BT709_yuv420p_2.5M_aac_48k_2ch_512k_a2814_v1440_60sec.mp4 | Timing, underflow resilience |
+| VTS_L4_H265_AC3_5001  | H.265 AC3 | vts_h265_1080p_sdr_24.0f_BT709_yuv420p_2.5M_ac3_48k_2ch_256k_a1875_v1440_60sec.mp4 | Same, HEVC path |
+| VTS_L4_MPEG2_AAC_5001 | MPEG-2 AAC| vts_mpeg2_480p_sdr_24.0f_BT709_yuv420p_2.5M_aac_48k_2ch_128k_a2814_v1440_60sec.mp4 | Legacy low-bitrate behavior |
+| VTS_L4_VP9_AAC_5001   | VP9 AAC   | vts_vp9_480p_sdr_24.0f_BT709_yuv420p_2.5M_aac_48k_2ch_512k_a2814_v1440_60sec.mp4 | VP9 timing behavior |
+| VTS_L4_AV1_AAC_5001   | AV1 AAC   | vts_av1_480p_sdr_24.0f_BT709_yuv420p_2.5M_aac_48k_2ch_128k_a2814_v1440_60sec.mp4 | AV1 low bitrate |
+
+---
+
+#### Adaptive Bitrate (ABR) Streaming
+
+**Purpose:**
+Validate seamless bitrate and resolution switching(Dynamic Resolution Switching) during playback, simulating adaptive streaming scenarios where streams transition between different quality levels (e.g., 480p, 720p, 1080p,2k,4k). Test streams include both low-to-high bitrate transitions (simulating improving network conditions) and high-to-low bitrate transitions (simulating degrading network conditions) to ensure robust adaptation in varying network environments.
+
+**List of Streams:**
+
+| TC ID                 | Codec     | Stream | Wrapper Requirements Exercised   |
+| ----------------------|-----------|--------| ---------------------------------|
+| VTS_L4_H264_AAC_6001  | H.264 AAC | vts_h264_abr_multi_bitrate_sdr_BT709_yuv420p_aac_48k_2ch_256k_300sec.mp4 | Dynamic resolution/bitrate switching, buffer management |
+| VTS_L4_H265_EAC3_6001 | H.265 EAC3| vts_h265_abr_multi_bitrate_hdr10_BT2020_yuv420p_eac3_48k_6ch_512k_300sec.mp4 | ABR with HDR metadata transitions |
+| VTS_L4_VP9_OPUS_6001  | VP9 OPUS  | vts_vp9_abr_multi_bitrate_sdr_BT709_yuv420p_opus_48k_2ch_256k_300sec.webm | WebM container ABR handling |
+| VTS_L4_H264_AAC_6002  | H.264 AAC | vts_h264_abr_multi_bitrate_2k_BT709_yuv420p_aac_48k_2ch_256k_300sec.mp4 | Dynamic resolution/bitrate switching till 2k |
+| VTS_L4_H265_EAC3_6002 | H.265 EAC3| vts_h265_abr_multi_bitrate_2k_BT709_yuv420p_eac3_48k_6ch_512k_300sec.mp4 | ABR till 2k  |
 
 ---
 
 ### 1.2 Pause Resume Trick Modes and Seek
 
-**Objective**:<br> Validate trick modes and seeking with minimal frame drops and accurate FrameMetadata reporting.
+**Purpose:**
+Validate pause, resume, fast-forward, rewind, and seek operations with minimal frame drops and accurate FrameMetadata reporting throughout all operations.
 
-| **TC ID** | **Action**                  | **Expected Result**                 |
-| --------- | --------------------------- | ----------------------------------- |
-| VTS_L4_H264_AAC-201  | Play 10-min @ 2x speed      | no AV drift      |
-| VTS_L4_H264_AAC-202  | Play 10-min @ 8x speed      | No microblocks  |
-| VTS_L4_H264_AAC-203  | Backward 2x                 | Smooth backward playback            |
-| VTS_L4_H264_AAC-204  | Pause → Resume              | No sync jump                  |
-| VTS_L4_H264_AAC-205  | Pause → Trick mode → Resume | Seamless, no corruption             |
-| VTS_L4_H264_AAC-206  | Pause → seek → resume       | Seamless, no corruption             |
+**List of Streams:**
 
----
-
-### 1.3 Robustness and Error Handling
-
-**Objective**: <br> Validate decoder behavior under error conditions.
-
-| TC ID | Error Condition | Expected Result |
-| :--- | :--- | :--- |
-| VTS_L4_H264_ERR-301 | Stream with corrupted I-frame | Brief glitch/blockiness, then recovers at next I-frame. No crash. |
-| VTS_L4_H264_ERR-302 | Stream with missing P/B-frames | Decoder should conceal the error or drop frames, but not crash. |
-| VTS_L4_H264_ERR-303 | Truncated/incomplete stream | Playback stops cleanly at the end. No crash or freeze. |
-| VTS_L4_H264_ERR-304 | Invalid Presentation Timestamps (PTS) | Graceful handling; may see A/V sync issues but should not crash. |
-| VTS_L4_H264_AAC-305  | Seek near EOS (last GOP)    | Lands on last I-frame; clean EOS; no extra frames after EOS  |
-| VTS_L4_H264_AAC-306  | Loss of frames (incomplete GOPs) |  No crash  |
-| VTS_L4_H264_AAC-307  | Seek to middle GOP          |  Seamless, no corruption  |
-| VTS_L4_H264_AAC-308  |Corrupt metadata encoding    |   No crash  |
-| VTS_L4_H264_AAC-309  |single I-frame    |   No crash  |
+| TC ID                 | Codec     | Stream | Wrapper Requirements Exercised |
+| ----------------------|-----------|--------|--------------------------------|
+| VTS_L4_H264_AAC_7001  | H.264 AAC | vts_h264_1080p_sdr_60.0f_BT709_yuv420p_20M_aac_48k_6ch_512k_a28126_v36000_600sec.mp4| Decoder state management during pause/resume, seek accuracy |
+| VTS_L4_H264_AC3_7001  | H.264 AC3 | vts_h264_1080i_sdr_29.97f_BT709_yuv420p_5M_ac3_48k_6ch_256k_a1875_v1797_60sec.mp4 | Interlaced handling with trick mode operations |
+| VTS_L4_H265_EAC3_7001 | H.265 EAC3| vts_h265_2160p_hdr10_60.0f_BT2020_yuv420p_18M_eac3_48k_6ch_512k_a18750_v36000_600sec.mp4 | HDR metadata persistence during trick modes |
+| VTS_L4_VP9_OPUS_7001  | VP9 OPUS  | vts_vp9_2160p_sdr_60.0f_BT2020_yuv420p_18M_opus_48k_8ch_256k_a30001_v36000_601sec.webm | WebM container seek and trick mode support |
+| VTS_L4_AV1_AC3_7001   | AV1 AC3   | vts_av1_2160p_hlg_60.0f_BT2020_yuv420p_20M_ac3_48k_6ch_512k_a18750_v36000_600sec.mp4 | AV1 codec with HLG during trick modes |
 
 ---
 
-### 1.4 Performance and Longevity
+### 1.3 AV Synchronization
 
-**Objective**: <br> Validate long-duration playback and performance.
+**Purpose:**
+Validate audio-video synchronization accuracy and measure drift over extended playback periods to ensure lip-sync is maintained within acceptable tolerances.
 
-| TC ID | Test | Expected Result |
-| :--- | :--- | :--- |
-|VTS_L4_H264_AAC-401| 2-hour playback (1080p, 60p, 12 Mbps) | No drift, <0.1% frame drops, stable playback|
-|VTS_L4_H265_AC3-402| 2-hour playback (4k, 60p,HDR, 25 Mbps) | No drift, <0.1% frame drops, stable playback|
+**List of Streams:**
+
+| TC ID               | Codec       | Stream | Wrapper Requirements Exercised |
+| --------------------|-------------|--------|--------------------------------|
+| VTS_L4_AVSYNC_8001  | H.264 AC3   | vts_h264_1080p_sdr_60.0f_BT709_yuv420p_12M_ac3_48k_6ch_256k_a28126_v36000_600sec.mp4 | AV sync callback accuracy, timestamp propagation |
+| VTS_L4_AVSYNC_8002  | H.265 EAC3  | vts_h265_2160p_hdr10_60.0f_BT2020_yuv420p_25M_eac3_48k_6ch_512k_a18750_v36000_600sec.mp4 | 4K HDR sync accuracy |
+| VTS_L4_AVSYNC_8003  | VP9 OPUS    | vts_vp9_1080p_sdr_30.0f_BT709_yuv420p_10M_opus_48k_2ch_256k_a30001_v18000_600sec.webm | WebM container sync handling |
+
+### 1.4 Robustness and Error Handling
+
+**Purpose:**
+Validate the player's resilience when processing corrupted streams. This ensures that an error in one track (e.g., Video) does not crash the application or stop the other track (e.g., Audio) from playing. Verify that errors are properly reported without causing system crashes or hangs.
+
+**List of Streams:**
+
+**Video Stream Corruption (with Valid Audio):**
+
+| TC ID | Error Condition | Stream | Expected Behavior |
+| :--- | :--- | :--- | :--- |
+| VTS_L4_H264_ERR_9001 | H264 Bitflip slice | vts_h264_1080p_slice_corruption_with_valid_aac_60sec.mp4 | Video artifacts visible; Audio plays uninterrupted. |
+| VTS_L4_H264_ERR_9002 | H264 NAL header | vts_h264_1080p_nal_header_corruption_with_valid_aac_60sec.mp4 | Error callback; Video recovers; Audio continuous |
+| VTS_L4_H265_ERR_9001 | HEVC Slice segment | vts_h265_1080p_slice_corruption_with_valid_ac3_60sec.mp4 | HEVC artifacts; Audio plays uninterrupted. |
+| VTS_L4_VP9_ERR_9001  | VP9 Frame header | vts_vp9_1080p_header_corruption_with_valid_opus_60sec.webm | Video frames dropped; Audio stays in sync. |
+| VTS_L4_AV1_ERR_9001  | AV1 OBU corruption | vts_av1_1080p_obu_corruption_with_valid_aac_60sec.mp4 | OBU error handled; Audio plays uninterrupted. |
+
+**Audio Stream Corruption (with Valid Video):**
+
+| TC ID | Error Condition | Stream | Expected Behavior |
+| :--- | :--- | :--- | :--- |
+| VTS_L4_AAC_ERR_9001 | AAC ADTS header | vts_h264_1080p_valid_video_with_aac_adts_corruption_60sec.mp4 | Audio glitches/silence; Video plays smooth. |
+| VTS_L4_AC3_ERR_9001 | AC3 Sync frame | vts_h264_1080p_valid_video_with_ac3_sync_corruption_60sec.mp4 | Audio resyncs; Video plays smooth. |
+| VTS_L4_EAC3_ERR_9002 | EAC3 Header | vts_h265_1080p_valid_video_with_eac3_header_corruption_60sec.mp4 | Audio error; Video plays smooth. |
+
+---
+
+### 1.5 Performance and Longevity
+
+**Purpose:**
+Validate decoder stability, memory management, and performance consistency(No A/V drift) during extended playback sessions. Ensure no resource leaks or performance degradation over time.
+
+**List of Streams:**
+
+| TC ID | Codec | Stream | Duration | Expected Result |
+| :--- | :--- | :--- | :--- | :--- |
+| VTS_L4_H264_AAC_1101 | H.264 AAC | vts_h264_1080p_sdr_60.0f_BT709_yuv420p_12M_aac_48k_2ch_256k_a168750_v648000_10800sec.mp4 | 3 hours | No A/V drift , No frame drops, no memory leaks |
+| VTS_L4_H265_AC3_1102 | H.265 AC3 | vts_h265_2160p_hdr10_60.0f_BT2020_yuv420p_25M_ac3_48k_6ch_512k_a112500_v648000_10800sec.mp4 | 3 hours | No A/V drift, No frame drops, stable HDR metadata |
+| VTS_L4_VP9_OPUS_1103 | VP9 OPUS | vts_vp9_1080p_sdr_60.0f_BT709_yuv420p_15M_opus_48k_2ch_256k_a180000_v648000_10800sec.webm | 3 hours | No A/V drift, No frame drops, no resource leaks |
+| VTS_L4_AV1_AAC_1104  | AV1 AAC  | vts_av1_2160p_sdr_30.0f_BT709_yuv420p_20M_aac_48k_2ch_256k_a168750_v648000_10800sec.mp4 | 3 hours | No A/V drift, No frame drops, consistent performance |
 
 ---
 
@@ -128,46 +230,68 @@ This test plan is structured around three primary use cases to ensure comprehens
 
 ### 2.1 Normal Playback
 
-**Objective**: <br> Validate only audio playback across codecs, sample rates, and channel configurations.
+**Purpose:**
+Validate audio-only decode pipeline including buffer queueing, flushing, EOS handling, and decoder state transitions across various audio codecs and sample rates.
 
-| **TC ID**        | **Audio Codec**     | **Sample Rate (Hz)** |  **Channels** | **Expected Result**              |
-| -----------------| ------------------- | -------------------- | ------------  | -------------------------------- |
-| VTS_L4_AAC-101   | AAC-LC              | 44.1k                | Stereo        | Smooth playback, no glitches     |
+**List of Streams:**
 
-| #|Test Dimension | Comments |
-|--|---------------|----------|
-| 1 | Audio Codec | Test every codec which the platform capabilities report. <br> Test unsupported codecs to check for errors. <br > [list of Audio Codec](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.7.1/audiodecoder/current/com/rdk/hal/audiodecoder/Codec.aidl)|
-| 2 | ChannelType | Test every ChannelType which the platform capabilities report. <br> [list of Channel Type](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.7.1/audiodecoder/current/com/rdk/hal/audiodecoder/ChannelType.aidl)|
-| 3 | PCMFormat | Test every PCMFormat which the platform capabilities report. <br> [list of PCMFormat](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.7.1/audiodecoder/current/com/rdk/hal/audiodecoder/PCMFormat.aidl)|
-| 4 | No of Channels | Test supported Channels  <br> Mono (1.0) <br>Stereo (2.0) <br> 2.1(Stereo + Subwoofer) <br>5.1 Surround <br> 7.1 Surround|
+| TC ID              | Audio Codec | Stream  | Wrapper Requirements Exercised |
+| -------------------| ------------|---------|--------------------------------|
+| VTS_L4_AAC_1201    |  AAC        | vts_aac_11.025k_2ch_64k_a647_v0_60sec.mp4 | Basic decoded audio path |
+| VTS_L4_AC3_1201    | AC-3        | vts_ac3_32k_2ch_128k_a1250_v0_60sec.mp4 | Passthrough control plane |
+| VTS_L4_EAC3_1201   | E-AC-3      | vts_eac3_32k_3ch_128k_a1250_v0_60sec.mp4 | Advanced passthrough |
+| VTS_L4_EAC3_ATMOS_1201| EAC3 with Atmos| vts_eac3_atmos_32k_2ch_128k_a1250_v0_60sec.mp4 | Advanced passthrough |
+| VTS_L4_PCM_1201    | PCM         | vts_pcm_44.1k_2ch_a2584_v0_60sec.mp4 | PCM queueing + sink behavior |
+| VTS_L4_OPUS_1201   | Opus        | vts_opus_12k_2ch_128k_a3001_v0_61sec.webm | WebM audio handling |
+| VTS_L4_VORBIS_1201 | Vorbis      | vts_vorbis_44.1k_2ch_128k_a2586_v0_61sec.webm | Legacy WebM audio |
+| VTS_L4_FLAC_1201   | FLAC        | vts_flac_44.1k_2ch_a575_v0_60sec.mp4 | Lossless decode path |
+| VTS_L4_MP3_1201    | MP3         | vts_mp3_16k_2ch_128k_a1669_v0_60sec.mp4 | Legacy audio decode |
 
 ---
 
 ### 2.2 Pause Resume Trick Modes and Seek
 
-**Objective**:<br> Validate audio trick modes and pause/resume behavior.
+**Purpose:**
+Validate audio-only pause, resume, seek, and trick mode operations ensuring smooth transitions without audio pops, clicks, or buffer underruns.
 
-| **TC ID** | **Action**                            | **Expected Result**                      |
-| --------- | ------------------------------------- | ---------------------------------------- |
-| VTS_L4_AAC-401   | Pause → Resume                        | No audible pops or glitches              |
-| VTS_L4_AAC-402   | Play 10-min stream @ 2x               | Finishes in \~5 min, audio stays in sync |
-| VTS_L4_AAC-403   | Play 10-min stream @ 8x               | Finishes in \~1.25 min, no crashes       |
-| VTS_L4_AAC-404   | Play → Pause → Fast Forward → Resume  | Smooth transitions, no corruption        |
-| VTS_L4_AAC-405   | Loop playback (repeat track 10 times) | No drift over long duration              |
+**List of Streams:**
+
+| TC ID           | Codec | Stream | Wrapper Requirements Exercised |
+| --------------- |-------|--------|--------------------------------|
+| VTS_L4_AAC_1301 | AAC   | vts_aac_48k_6ch_512k_a28126_v36000_600sec.mp4| Audio decoder state management, seek accuracy, pause/resume without artifacts |
+| VTS_L4_AC3_1301 | AC3   | vts_ac3_48k_6ch_512k_a28126_v36000_600sec.mp4| Passthrough mode trick operations, buffer continuity |
+| VTS_L4_EAC3_1301| EAC3  | vts_eac3_48k_6ch_512k_a28126_v36000_600sec.mp4| Advanced audio codec seek/pause handling |
 
 ---
 
 ### 2.3 Robustness, Error Handling and Performance
 
-**Objective**: <br>Validate edge cases for audio playback.
+**Purpose:**
+Validate audio decoder resilience when processing corrupted or malformed audio streams. Ensure graceful error handling without crashes or audio pipeline stalls.
 
-| **TC ID** | **Test**                                       | **Expected Result**               |
-| --------- | ---------------------------------------------- | --------------------------------- |
-| VTS_L4_AAC-501   | Silence-only audio (PCM 48k, 16-bit)           | Decoder outputs silence, no noise |
-| VTS_L4_AAC-502   | Gapless playback (two AAC tracks back-to-back) | Seamless, no click/pop            |
-| VTS_L4_AAC-503   | Low-bitrate MP3 (32 kbps)                      | Still decodes without error       |
-| VTS_L4_AAC-504   | High-bitrate MP3 (320 kbps)                    | Proper playback                   |
-| VTS_L4_AAC-506   | Long-duration test (2 hrs AAC)                 | No drift, stable playback         |
+**List of Streams:**
+
+**AAC Error Streams:**
+
+| TC ID           | Error Condition            | Stream | Expected Behavior |
+| --------------- | -------------------------- | -------| ----------------- |
+| VTS_L4_AAC_1401 | ADTS header corruption     | vts_aac_48k_6ch_adts_header_corruption_512k_a2814_v0_61sec.mp4 | Error reported, attempts recovery at next valid frame |
+| VTS_L4_AAC_1402 | Bitrate field corruption   | vts_aac_48k_6ch_bitrate_field_corruption_256k_a2814_v0_61sec.mp4 | Graceful handling, playback continues |
+| VTS_L4_AAC_1403 | Channel mode corruption    | vts_aac_48k_6ch_channel_mode_corruption_256k_a2814_v0_59sec.mp4 | Channel config error handled, no crash |
+| VTS_L4_AAC_1404 | Dynamic range corruption   | vts_aac_48k_6ch_dynamic_range_corruption_512k_a2814_v0_51sec.mp4 | Metadata error, audio playback continues |
+
+**AC3 Error Streams:**
+
+| TC ID           | Error Condition            | Stream | Expected Behavior |
+| --------------- | -------------------------- | -------| ----------------- |
+| VTS_L4_AC3_1401 | Sync frame corruption      | vts_ac3_48k_6ch_sync_frame_corruption_512k_a2814_v0_60sec.mp4 | Sync loss detected, resynchronization attempted |
+| VTS_L4_AC3_1402 | BSI corruption             | vts_ac3_48k_6ch_bsi_corruption_512k_a2814_v0_60sec.mp4 | BSI error handled, decoder continues |
+
+**E-AC3 Error Streams:**
+
+| TC ID           | Error Condition            | Stream | Expected Behavior |
+| --------------- | -------------------------- | -------| ----------------- |
+| VTS_L4_EAC3_1401| Frame header corruption    | vts_eac3_48k_8ch_frame_header_corruption_768k_a3001_v0_60sec.mp4 | Header error reported, playback recovery |
 
 ---
 
@@ -175,77 +299,141 @@ This test plan is structured around three primary use cases to ensure comprehens
 
 ### 3.1 Normal Playback
 
-**Objective**:
-Validate video-only playback across codecs, resolutions, frame rates, and dynamic ranges (no audio pipeline active).
+**Purpose:**
+Validate video-only decode pipeline across various codecs, resolutions, and HDR modes without audio track dependencies.
 
-| **TC ID**        | **Video Codec** | **Resolution**   | **Dynamic Range** | **ColorSpace** | **Depth** | **Frame Rate** | **Pixel Format** | **Bitrate (Mbps)** | **Expected Result** |
-| ---------------- | --------------- | ---------------- | ----------------- | -------------- | --------- | -------------- | ---------------- | ------------------ | ------------------ |
-| VTS_L4_H264-VID101 | H.264           | 1920x1080 (FHD) | SDR               | BT.709         | 8-bit     | 30p            | YUV420           | 8                  | Smooth playback, no frame drops, A/V sync not applicable |
-| VTS_L4_HEVC-VID201 | H.265/HEVC      | 3840x2160 (UHD) | HDR10             | BT.2020        | 10-bit    | 60p            | YUV420           | 18                 | Stable playback, correct HDR metadata, no crashes |
+**List of Streams:**
+
+| TC ID            | Video Codec | Stream  | Wrapper Requirements Exercised |
+| -----------------| ------------|---------|--------------------------------|
+| VTS_L4_H264_1501 | H.264       | vts_h264_1080p_sdr_60.0f_BT709_yuv420p_12M_a0_v3600_60sec.mp4| Video-only decoder pipeline, buffer flow without audio |
+| VTS_L4_HEVC_1501 | H.265       | vts_h265_2160p_hdr10_24.0f_BT2020_yuv420p_25M_a0_v1440_60sec.mp4| 4K HDR video-only decode, metadata propagation |
+| VTS_L4_HEVC_1502 | H.265       | vts_h265_1080p_sdr_60.0f_BT709_yuv420p_5M_a0_v3600_60sec.mp4| H.265 video-only low bitrate handling |
+| VTS_L4_VP9_1501  | VP9         | vts_vp9_2160p_sdr_60.0f_BT709_yuv420p_15M_a0_v3600_60sec.webm | WebM video-only decode, 4K processing |
+| VTS_L4_AV1_1501  | AV1         | vts_av1_2160p_hdr10_60.0f_BT2020_yuv420p_15M_a0_v3600_60sec.mp4| AV1 4K HDR video-only with YUV420p format |
 
 ---
 
 ### 3.2 Pause Resume Trick Modes and Seek
 
-**Objective**:
-Validate smooth handling of video-only trick modes without audio.
+**Purpose:**
+Validate video-only pause, resume, seek, and trick mode operations with accurate frame navigation and proper decoder state management without audio synchronization dependencies.
 
-| **TC ID**       | **Action**        | **Expected Result** |
-| ----------------| ----------------- | ------------------- |
-| VTS_L4_H264-VID201 | Pause → Resume    | Frame resumes cleanly, no corruption |
-| VTS_L4_H264-VID202 | Seek mid-stream   | Frame resumes at nearest I-frame, no corruption |
-| VTS_L4_H264-VID203 | Play 2x, 4x, 8x   | Smooth FF/REW, no tearing or drift |
+**List of Streams:**
+
+| TC ID            | Video Codec | Stream  | Wrapper Requirements Exercised |
+| -----------------| ------------|---------|--------------------------------|
+| VTS_L4_H264_1601 | H.264       | vts_h264_1080p_sdr_60.0f_BT709_yuv420p_12M_a0_v3600_60sec.mp4| Video decoder seek accuracy, trick mode state management |
+| VTS_L4_HEVC_1601 | H.265       | vts_h265_2160p_hdr10_24.0f_BT2020_yuv420p_25M_a0_v1440_60sec.mp4| 4K HDR video seek/pause handling, metadata persistence |
+| VTS_L4_HEVC_1602 | H.265       | vts_h265_1080p_sdr_60.0f_BT709_yuv420p_5M_a0_v3600_60sec.mp4| H.265 trick mode operations, keyframe navigation |
+| VTS_L4_VP9_1601  | VP9         | vts_vp9_2160p_sdr_60.0f_BT709_yuv420p_15M_a0_v3600_60sec.webm | VP9 video-only seek/pause in WebM container |
+| VTS_L4_AV1_1601  | AV1         | vts_av1_2160p_hdr10_60.0f_BT2020_yuv420p_15M_a0_v3600_60sec.mp4| AV1 4K trick mode handling with HDR |
 
 ---
 
 ### 3.3 Robustness and Error Handling
 
-**Objective**:
-Validate resilience of video-only playback under error or malformed conditions.
+**Purpose:**
+Validate video decoder resilience when processing corrupted video-only streams. Ensure graceful error handling, proper error reporting, and recovery without system crashes or hangs.
 
-| **TC ID**       | **Error Condition**             | **Expected Result** |
-| ----------------| --------------------------------| ------------------- |
-| VTS_L4_H264-VID301 | Missing audio track            | Video plays smoothly without crash |
-| VTS_L4_H264-VID302 | Corrupt I-frame                | Brief artifact, recovers at next I-frame |
-| VTS_L4_H264-VID303 | Truncated video stream         | Clean EOS, no freeze |
-| VTS_L4_H264-VID304 | Corrupt video metadata (PTS)   | Graceful handling, no crash |
+**List of Streams:**
+
+**H.264 Error Streams:**
+
+| TC ID                 | Error Condition              | Stream | Expected Behavior |
+| ----------------------| ---------------------------- | -------| ----------------- |
+| VTS_L4_H264_ERR_1701  | NAL header corruption        | vts_h264_1080i_sdr_24.0f_BT709_yuv420p_nal_header_corruption_10M_a0_v1278_60sec.mp4 | Error callback triggered, decoder recovers |
+| VTS_L4_H264_ERR_1702  | Partial frame truncation     | vts_h264_1080i_sdr_24.0f_BT709_yuv420p_partial_frame_truncation_10M_a0_v1362_57sec.mp4 | Graceful handling, continues decoding |
+| VTS_L4_H264_ERR_1703  | PTS/DTS corruption           | vts_h264_1080i_sdr_24.0f_BT709_yuv420p_pts_dts_corruption_10M_a0_v1437_60sec.mp4 | Timestamp error handling, playback continues |
+| VTS_L4_H264_ERR_1704  | SPS/PPS corruption           | vts_h264_1080i_sdr_24.0f_BT709_yuv420p_sps_pps_corruption_10M_a0_v1108_60sec.mp4 | Parameter set error, decoder attempts recovery |
+| VTS_L4_H264_ERR_1705  | Bitflip slice corruption     | vts_h264_1080i_sdr_24.0f_BT709_yuv420p_bitflip_slice_10M_a0_v1438_60sec.mp4 | Slice error detected, continues with next frame |
+
+**H.265 Error Streams:**
+
+| TC ID                 | Error Condition              | Stream | Expected Behavior |
+| ----------------------| ---------------------------- | -------| ----------------- |
+| VTS_L4_H265_ERR_1700  | HEVC NAL header corruption   | vts_h265_1080p_hdr10_30.0f_BT2020_yuv422p_hevc_nal_header_corruption_25M_a0_v1042_59sec.mp4 | NAL error handling, decoder recovers |
+| VTS_L4_H265_ERR_1702  | Partial frame truncation     | vts_h265_1080p_hdr10_30.0f_BT2020_yuv422p_partial_frame_truncation_25M_a0_v1732_58sec.mp4 | Graceful handling, continues decoding |
+| VTS_L4_H265_ERR_1703  | PTS/DTS corruption           | vts_h265_1080p_hdr10_30.0f_BT2020_yuv422p_pts_dts_corruption_25M_a0_v1945_66sec.mp4 | Timestamp error handling, playback continues |
+| VTS_L4_H265_ERR_1704  | Tile entry point corruption  | vts_h265_1080p_hdr10_30.0f_BT2020_yuv422p_hevc_tile_entry_point_corruption_25M_a0_v1752_60sec.mp4 | Tile parsing error, decoder recovers |
+| VTS_L4_H265_ERR_1705  | GOP truncation/duplication   | vts_h265_1080p_hdr10_30.0f_BT2020_yuv422p_gop_truncation_duplication_25M_a0_v1936_65sec.mp4 | GOP structure error handled |
+
+**MPEG-2 Error Streams:**
+
+| TC ID                 | Error Condition              | Stream | Expected Behavior |
+| ----------------------| ---------------------------- | -------| ----------------- |
+| VTS_L4_MPEG2_ERR_1701 | Sequence header corruption   | vts_mpeg2_1080i_sdr_30.0f_BT709_yuv420p_mpeg2_sequence_header_corruption_15M_a0_v1799_60sec.mp4 | Header error handling, decoder recovers |
+| VTS_L4_MPEG2_ERR_1702 | GOP header corruption        | vts_mpeg2_1080i_sdr_30.0f_BT709_yuv420p_mpeg2_gop_header_corruption_15M_a0_v1799_60sec.mp4 | GOP error detected, continues decoding |
+| VTS_L4_MPEG2_ERR_1703 | Partial frame truncation     | vts_mpeg2_1080i_sdr_30.0f_BT709_yuv420p_partial_frame_truncation_15M_a0_v1696_60sec.mp4 | Graceful handling, playback continues |
+| VTS_L4_MPEG2_ERR_1704 | PTS/DTS corruption           | vts_mpeg2_1080i_sdr_30.0f_BT709_yuv420p_pts_dts_corruption_15M_a0_v1798_60sec.ts | Timestamp error handling |
+
+**VP9 Error Streams:**
+
+| TC ID                 | Error Condition              | Stream | Expected Behavior |
+| ----------------------| ---------------------------- | -------| ----------------- |
+| VTS_L4_VP9_ERR_1701   | Superframe index corruption  | vts_vp9_1080p_sdr_30.0f_BT2020_yuv420p_vp9_superframe_index_corruption_18M_a0_v1800_60sec.webm | Superframe error, decoder recovers |
+| VTS_L4_VP9_ERR_1702   | Probability table desync     | vts_vp9_1080p_sdr_30.0f_BT2020_yuv420p_vp9_prob_table_desync_18M_a0_v1800_60sec.webm | Probability context error handled |
+| VTS_L4_VP9_ERR_1703   | Resolution change stress     | vts_vp9_1080p_sdr_30.0f_BT2020_yuv420p_vp9_resolution_change_stress_18M_a0_v1800_60sec.webm | Dynamic resolution handling |
+| VTS_L4_VP9_ERR_1704   | Loop filter corruption       | vts_vp9_1080p_sdr_30.0f_BT2020_yuv420p_vp9_loop_filter_max_18M_a0_v1800_60sec.webm | Filter parameter error handled |
+
+**AV1 Error Streams:**
+
+| TC ID                 | Error Condition              | Stream | Expected Behavior |
+| ----------------------| ---------------------------- | -------| ----------------- |
+| VTS_L4_AV1_ERR_1701   | OBU header fuzz              | vts_av1_1080p_hdr10_30.0f_BT2020_yuv420p_av1_obu_header_fuzz_15M_a0_v1800_60sec.mp4 | OBU parsing error, decoder recovers |
+| VTS_L4_AV1_ERR_1702   | Tile group size mismatch     | vts_av1_1080p_hdr10_30.0f_BT2020_yuv420p_av1_tile_group_size_mismatch_15M_a0_v1800_60sec.mp4 | Tile error handling |
+| VTS_L4_AV1_ERR_1703   | CDF update corruption        | vts_av1_1080p_hdr10_30.0f_BT2020_yuv420p_av1_cdf_update_corruption_15M_a0_v1800_60sec.mp4 | Symbol decoder error handled |
+| VTS_L4_AV1_ERR_1704   | Film grain param overflow    | vts_av1_1080p_hdr10_30.0f_BT2020_yuv420p_av1_film_grain_param_overflow_15M_a0_v1800_60sec.mp4 | Parameter validation, continues decoding |
 
 ---
 
-### 3.4 Performance and Longevity
+## Validation Methods
 
-**Objective**:
-Validate long-duration stability of video-only playback.
-
-| **TC ID**       | **Test**                          | **Expected Result** |
-| ----------------| ---------------------------------- | ------------------- |
-| VTS_L4_H264-VID401 | 2-hr FHD playback (no audio)     | No drift, <0.1% frame drops |
-| VTS_L4_HEVC-VID402 | 2-hr 4K HDR playback (no audio)  | Stable, no memory leaks or hangs |
-
----
-
-## Validations methods
+The following validation methods are applied consistently across all test cases to ensure comprehensive quality and performance verification.
 
 ### 1. Metrics Validation
 
-If playback metrics are available, Verify key performance indicators against the stream configuration file:
+When playback metrics are available, verify key performance indicators against expected values defined in the stream configuration file:
 
-- **Frame Counts:** decoded, received, presented, repeated, error, underflow, and dropped.
-
-- **Synchronization:** A/V sync accuracy and drift over time.
+- **Frame Counts:** Validate decoded, received, presented, repeated, error, underflow, and dropped frame counts.
+- **Synchronization:** Measure A/V sync accuracy and No drift over time.
+- **Performance:** Monitor CPU/memory usage, decoder throughput, and buffer utilization.
 
 ### 2. Event & Metadata Validation
 
-Register listeners for key playback events to validate stream integrity
+Register listeners for critical playback events to validate stream integrity and proper callback handling:
 
-- `onFirstFrameRendered`, `onDecodeError`, `onEndOfStream`, `onAudioUnderflow`, `onVideoUnderflow`, `onAudioResumed` `onVideoResumed`,
+**Events:**
 
-Cross-check these with the expected values in the stream configuration file.
+- `onFirstFrameRendered` - Confirms first frame presentation
+- `onDecodeError` - Reports decoding errors with error codes
+- `onEndOfStream` - Signals proper EOS handling
+- `onAudioUnderflow` / `onVideoUnderflow` - Detects buffer starvation
+- `onAudioResumed` / `onVideoResumed` - Confirms recovery from underflow
+
+**Metadata Validation:**
+
+- Verify FrameMetadata fields (resolution, frame rate, color space, HDR mode, pixel format)
+- Cross-check metadata values against stream configuration file
+- Validate metadata consistency throughout playback
 
 ### 3. Playback Quality Validation
 
-Validate subjective playback quality (e.g., free of visible or audible artifacts).
-This step will be automated using **Raft**.
+Validate subjective playback quality to ensure content is free from visual or audible artifacts:
 
-**Note**:
-Input streams may use different container formats (.mp4, .ts, .webm). If required, adaptive bitrate (ABR) formats such as HLS and MPEG-DASH will also be tested.
+- **Visual Quality:** No blocking, tearing, color banding, or synchronization issues
+- **Audio Quality:** No pops, clicks, distortion, or sync drift
+- **Automation:** Quality validation will be automated using **Raft** framework
+
+### 4. Robustness Validation
+
+For error handling tests:
+
+- Verify no system crashes or hangs when processing corrupted streams
+- Confirm error callbacks are triggered with appropriate error codes
+- Validate graceful recovery and continuation of playback where possible
+
+---
+
+**Note:**
+Input streams utilize various container formats (.mp4, .ts, .webm). Future test phases may include adaptive bitrate (ABR) formats such as HLS and MPEG-DASH.
