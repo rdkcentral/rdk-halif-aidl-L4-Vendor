@@ -244,6 +244,90 @@ class VTS_L4_AVMODULE : public UTCore
         }
     }
 
+    void startOTFCodecSwitchTest(const char* moduleName, const char * testGroup, const char *testName)
+    {
+        UT_status_t status;
+        bool requireQualityCheck = false;
+        gTestConfiguration.testStreams.clear();
+        gTestConfiguration.trickModes.clear();
+
+        status = vts_av_parse_testconfig(moduleName, testGroup, testName, gTestConfiguration);
+
+        if(status != UT_STATUS_OK)
+        {
+            UT_LOG_INFO("Failed to parse the testconfiguration");
+            UT_ASSERT_TRUE(false);
+            return;
+        }
+
+        for(auto& stream: gTestConfiguration.testStreams)
+        {
+            status = vts_av_parse_streamconfig(stream, gStreamConfiguration);
+
+            if(status != UT_STATUS_OK)
+            {
+                UT_LOG_INFO("Failed to parse the streamconfiguration");
+                UT_ASSERT_TRUE(false);
+                return;
+            }
+            UT_LOG_INFO("Testing Stream for OTF Codec Switching: %s", gStreamConfiguration.input.c_str());
+            
+            string playerName = vts_av_parse_get_palayer("AVModule");
+
+            mPlayer = VTSPlayer::create(playerName);
+            if (!mPlayer)
+            {
+                UT_ASSERT_TRUE(false);
+                UT_LOG_ERROR("Failed to create the player");
+                return;
+            }
+
+            if (!mPlayer->init())
+            {
+                UT_ASSERT_TRUE(false);
+                UT_LOG_ERROR("Player Init failed");
+                return;
+            }
+
+            // Start playing (starts with AAC by default)
+            UT_LOG_INFO("[Test] Play stream");
+            mPlayer->play(gStreamConfiguration.input);
+
+            // Let the stream play for 5 seconds (AAC format)
+            this_thread::sleep_for(chrono::seconds(5));
+
+            // Switch to EAC3 on the fly
+            UT_LOG_INFO("[Test] Switch audio codec on the fly: AAC -> EAC3");
+            bool switchResult = mPlayer->switchAudioCodec(false); // false = EAC3
+            UT_ASSERT_TRUE(switchResult);
+
+            // Let the stream play for 5 seconds (EAC3 format)
+            this_thread::sleep_for(chrono::seconds(5));
+
+            // Switch back to AAC on the fly
+            UT_LOG_INFO("[Test] Switch audio codec on the fly: EAC3 -> AAC");
+            switchResult = mPlayer->switchAudioCodec(true); // true = AAC
+            UT_ASSERT_TRUE(switchResult);
+
+            // Let the stream play for 5 seconds (AAC format again)
+            this_thread::sleep_for(chrono::seconds(5));
+
+            // Stop playback
+            mPlayer->stop();
+            mPlayer->close();
+            mPlayer.reset();
+
+            this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+
+            requireQualityCheck = gTestConfiguration.userChoice;
+            if(requireQualityCheck)
+            {
+                bool response = validateTest("\nWas the OTF audio codec switching smooth (Y/N)?");
+                UT_ASSERT_TRUE(response);
+            }
+        }
+    }
+
     void readAndDiscardRestOfLine(FILE *in)
     {
         int c;
@@ -284,6 +368,7 @@ class VTS_L4_AVMODULE : public UTCore
  *
  * **Test Group ID:** 04@n
  * **Test Case ID:** 001@n
+ * [O
  *
  * **Test Procedure:**
  * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
@@ -311,6 +396,24 @@ UT_ADD_TEST(VTS_L4_AVMODULE, playBackWithTrickModes)
     const char *testName = "playBackWithTrickModes";
 
     startTest(mModuleName, mTestGroup, testName);
+}
+
+/**
+ * @brief Test on-the-fly (OTF) audio codec switching
+ *
+ * This test verifies the ability to switch between audio codecs (AAC and EAC3) on the fly
+ *
+ * **Test Group ID:** 04@n
+ * **Test Case ID:** 003@n
+ *
+ * **Test Procedure:**
+ * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
+ */
+UT_ADD_TEST(VTS_L4_AVMODULE, OTFAudioCodecSwitch)
+{
+    const char *testName = "OTFAudioCodecSwitch";
+
+    startOTFCodecSwitchTest(mModuleName, mTestGroup, testName);
 }
 
 /** @} */ // End of AV_MODULE_HALTEST_L4
