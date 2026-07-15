@@ -567,6 +567,7 @@ class VTS_L4_AVMODULE : public UTCore
     {
         UT_status_t status;
         bool requireQualityCheck = false;
+	bool isOTFCodecSwitch = (strcmp(testName, "OTFAudioCodecSwitch") == 0);
         // Clear testStreams to avoid accumulating streams from previous runs
         gTestConfiguration.testStreams.clear();
         gTestConfiguration.trickModes.clear();
@@ -590,12 +591,55 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(false);
                 return;
             }
-            /* Get the metrics before start of play */
-            AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
-            AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
+	    UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
+            if (isOTFCodecSwitch)
+            {
+               string playerName = vts_av_parse_get_palayer("AVModule");
+               mPlayer = VTSPlayer::create(playerName);
+               if (!mPlayer)
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Failed to create the player");
+                   return;
+               }
+               if (!mPlayer->init())
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Player Init failed");
+                   return;
+               }
+               // Start playback (AAC by default)
+               UT_LOG_INFO("[Test] Play stream");
+               mPlayer->play(gStreamConfiguration.input);
+               // Let AAC play for 5 seconds
+               this_thread::sleep_for(chrono::seconds(5));
+               // Switch AAC -> EAC3
+               UT_LOG_INFO("[Test] Switch audio codec: AAC -> EAC3");
+               bool switchResult = mPlayer->switchAudioCodec(false);
+               UT_ASSERT_TRUE(switchResult);
+               // Let EAC3 play for 5 seconds
+               this_thread::sleep_for(chrono::seconds(5));
+               // Switch EAC3 -> AAC
+               UT_LOG_INFO("[Test] Switch audio codec: EAC3 -> AAC");
+               switchResult = mPlayer->switchAudioCodec(true);
+               UT_ASSERT_TRUE(switchResult);
+               // Let AAC play again for 5 seconds
+               this_thread::sleep_for(chrono::seconds(5));
+               mPlayer->stop();
+               mPlayer->close();
+               mPlayer.reset();
+            }
 
-            UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
-            playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
+	    else
+	    {
+
+                /* Get the metrics before start of play */
+                AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
+                AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
+
+                UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
+                playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
+	    }
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
 
             /* Get the metrics after start of play */
@@ -799,7 +843,7 @@ UT_ADD_TEST(VTS_L4_AVMODULE, OTFAudioCodecSwitch)
 {
     const char *testName = "OTFAudioCodecSwitch";
 
-    startOTFCodecSwitchTest(mModuleName, mTestGroup, testName);
+    startTest(mModuleName, mTestGroup, testName);
 }
 
 /** @} */ // End of AV_MODULE_HALTEST_L4
