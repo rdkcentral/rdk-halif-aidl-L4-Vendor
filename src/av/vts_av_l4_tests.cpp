@@ -668,7 +668,7 @@ class VTS_L4_AVMODULE : public UTCore
             requireQualityCheck = gTestConfiguration.userChoice;
             if(requireQualityCheck)
             {
-		bool response
+		bool response;
 		if (isOTFCodecSwitch)
 		{
 			response = validateTest(
