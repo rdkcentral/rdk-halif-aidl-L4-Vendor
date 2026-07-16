@@ -59,6 +59,7 @@
 
 #include <thread>
 #include <chrono>
+#include <cstring>
 
 #include <ut.h>
 #include <ut_log.h>
@@ -668,16 +669,16 @@ class VTS_L4_AVMODULE : public UTCore
             if(requireQualityCheck)
             {
 		bool response
-			if (isOTFCodecSwitch)
-			{
-				response = validateTest(
-						"\nWas the OTF audio codec switching smooth? (Y/N)?");
-			}
-		        else
-			{
-				response = validateTest(
-                                                "\nIs the stream playback good (Y/N)?");
-			}
+		if (isOTFCodecSwitch)
+		{
+			response = validateTest(
+					"\nWas the OTF audio codec switching smooth? (Y/N)?");
+		}
+		else
+		{
+			response = validateTest(
+                                        "\nIs the stream playback good (Y/N)?");
+		}
                 UT_ASSERT_TRUE(response);
             }
         }
