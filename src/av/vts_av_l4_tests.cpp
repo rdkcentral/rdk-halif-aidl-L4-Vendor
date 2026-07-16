@@ -592,6 +592,10 @@ class VTS_L4_AVMODULE : public UTCore
                 return;
             }
 	    UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
+            /* Get the metrics before start of play */
+            AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
+            AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
+
             if (isOTFCodecSwitch)
             {
                string playerName = vts_av_parse_get_palayer("AVModule");
@@ -632,12 +636,6 @@ class VTS_L4_AVMODULE : public UTCore
 
 	    else
 	    {
-
-                /* Get the metrics before start of play */
-                AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
-                AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
-
-                UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
                 playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
 	    }
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
@@ -669,7 +667,17 @@ class VTS_L4_AVMODULE : public UTCore
             requireQualityCheck = gTestConfiguration.userChoice;
             if(requireQualityCheck)
             {
-                bool response = validateTest("\nIs the stream playback good (Y/N)?");
+		bool response
+			if (isOTFCodecSwitch)
+			{
+				response = validateTest(
+						"\nWas the OTF audio codec switching smooth? (Y/N)?");
+			}
+		        else
+			{
+				response = validateTest(
+                                                "\nIs the stream playback good (Y/N)?");
+			}
                 UT_ASSERT_TRUE(response);
             }
         }
