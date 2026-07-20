@@ -617,19 +617,19 @@ class VTS_L4_AVMODULE : public UTCore
                UT_LOG_INFO("[Test] Play stream");
                mPlayer->play(gStreamConfiguration.input);
                // Let AAC play for 5 seconds
-               this_thread::sleep_for(chrono::seconds(5));
+               this_thread::sleep_for(chrono::seconds(10));
                // Switch AAC -> EAC3
                UT_LOG_INFO("[Test] Switch audio codec: AAC -> EAC3");
-               bool switchResult = mPlayer->switchAudioCodec(false);
+               bool switchResult = mPlayer->switchAudioTrack(1);
                UT_ASSERT_TRUE(switchResult);
                // Let EAC3 play for 5 seconds
                this_thread::sleep_for(chrono::seconds(5));
                // Switch EAC3 -> AAC
                UT_LOG_INFO("[Test] Switch audio codec: EAC3 -> AAC");
-               switchResult = mPlayer->switchAudioCodec(true);
+               switchResult = mPlayer->switchAudioTrack(0);
                UT_ASSERT_TRUE(switchResult);
                // Let AAC play again for 5 seconds
-               this_thread::sleep_for(chrono::seconds(5));
+               this_thread::sleep_for(chrono::seconds(10));
                mPlayer->stop();
                mPlayer->close();
                mPlayer.reset();
