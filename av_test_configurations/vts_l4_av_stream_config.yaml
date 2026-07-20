@@ -28,3 +28,10 @@ AVStreams:
     video_frames: 30 # Number of video frames
     audio_error_frames: 0 # Number of audio error frames
     video_error_frames: 0 # Number of video error frames
+  test_002_ts:
+    input: test_002_ts.ts
+    duration: 1 # Duration in seconds
+    audio_frames: 48 # Number of audio frames
+    video_frames: 30 # Number of video frames
+    audio_error_frames: 0 # Number of audio error frames
+    video_error_frames: 0 # Number of video error frames
