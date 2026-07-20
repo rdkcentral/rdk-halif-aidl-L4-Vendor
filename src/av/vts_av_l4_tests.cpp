@@ -616,8 +616,8 @@ class VTS_L4_AVMODULE : public UTCore
                // Start playback (AAC by default)
                UT_LOG_INFO("[Test] Play stream");
                mPlayer->play(gStreamConfiguration.input);
-               // Let AAC play for 5 seconds
-               this_thread::sleep_for(chrono::seconds(10));
+               // Let AAC play for 15 seconds
+               this_thread::sleep_for(chrono::seconds(15));
                // Switch AAC -> EAC3
                UT_LOG_INFO("[Test] Switch audio codec: AAC -> EAC3");
                bool switchResult = mPlayer->switchAudioTrack(1);
