@@ -569,6 +569,7 @@ class VTS_L4_AVMODULE : public UTCore
         UT_status_t status;
         bool requireQualityCheck = false;
 	bool isOTFCodecSwitch = (strcmp(testName, "OTFAudioCodecSwitch") == 0);
+	bool isAudioTrackSwitch = (strcmp(testName, "AudioTrackSwitch") == 0);
         // Clear testStreams to avoid accumulating streams from previous runs
         gTestConfiguration.testStreams.clear();
         gTestConfiguration.trickModes.clear();
@@ -630,6 +631,44 @@ class VTS_L4_AVMODULE : public UTCore
                UT_ASSERT_TRUE(switchResult);
                // Let AAC play again for 15 seconds
                this_thread::sleep_for(chrono::seconds(15));
+               mPlayer->stop();
+               mPlayer->close();
+               mPlayer.reset();
+            }
+
+	    else if (isAudioTrackSwitch)
+            {
+               string playerName = vts_av_parse_get_palayer("AVModule");
+               mPlayer = VTSPlayer::create(playerName);
+               if (!mPlayer)
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Failed to create the player");
+                   return;
+               }
+               if (!mPlayer->init())
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Player Init failed");
+                   return;
+               }
+               // Start playback
+               UT_LOG_INFO("[Test] Play stream");
+               mPlayer->play(gStreamConfiguration.input);
+               // Let track 1 play for 30 seconds
+               this_thread::sleep_for(chrono::seconds(30));
+               // Switch track 1 -> track 2
+               UT_LOG_INFO("[Test] Switch audio track: 1 -> 2");
+               bool switchResult = mPlayer->switchAudioTrack(1);
+               UT_ASSERT_TRUE(switchResult);
+               // Let track 2 play for 30 seconds
+               this_thread::sleep_for(chrono::seconds(30));
+               // Switch track 2 -> track 1
+               UT_LOG_INFO("[Test] Switch audio track: 2 -> 1");
+               switchResult = mPlayer->switchAudioTrack(0);
+               UT_ASSERT_TRUE(switchResult);
+               // Let track 1 play again for 15 seconds
+               this_thread::sleep_for(chrono::seconds(30));
                mPlayer->stop();
                mPlayer->close();
                mPlayer.reset();
@@ -851,6 +890,43 @@ UT_ADD_TEST(VTS_L4_AVMODULE, playBackWithTrickModes)
 UT_ADD_TEST(VTS_L4_AVMODULE, OTFAudioCodecSwitch)
 {
     const char *testName = "OTFAudioCodecSwitch";
+
+    startTest(mModuleName, mTestGroup, testName);
+}
+
+/**
+ * @brief Test audio track switching
+ *
+ * This test verifies the ability to switch between audio tracks
+ *
+ * **Test Group ID:** 04@n
+ * **Test Case ID:** 003@n
+ *
+ * **Test Procedure:**
+ * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
+ */
+
+UT_ADD_TEST(VTS_L4_AVMODULE, AudioTrackSwitch)
+{
+    const char *testName = "AudioTrackSwitch";
+
+    startTest(mModuleName, mTestGroup, testName);
+}
+
+/**
+ * @brief Test video resolution switching
+ *
+ * This test verifies the ability to switch between video resolutions on the fly
+ *
+ * **Test Group ID:** 04@n
+ * **Test Case ID:** 003@n
+ *
+ * **Test Procedure:**
+ * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
+ */
+UT_ADD_TEST(VTS_L4_AVMODULE, resolutionSwitch)
+{
+    const char *testName = "resolutionSwitch";
 
     startTest(mModuleName, mTestGroup, testName);
 }
