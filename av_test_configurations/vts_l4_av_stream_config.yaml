@@ -49,3 +49,31 @@ AVStreams:
     video_frames: 30 # Number of video frames
     audio_error_frames: 0 # Number of audio error frames
     video_error_frames: 0 # Number of video error frames
+  test_005_mp4:
+    input: test_005.mp4 # Stream name
+    duration: 1 # Duration in seconds
+    audio_frames: 48 # Number of audio frames
+    video_frames: 30 # Number of video frames
+    audio_error_frames: 0 # Number of audio error frames
+    video_error_frames: 0 # Number of video error frames
+  test_006_mp4:
+    input: test_006.mp4 # Stream name
+    duration: 1 # Duration in seconds
+    audio_frames: 48 # Number of audio frames
+    video_frames: 30 # Number of video frames
+    audio_error_frames: 0 # Number of audio error frames
+    video_error_frames: 0 # Number of video error frames
+  test_007_mp4:
+    input: test_007.mp4 # Stream name
+    duration: 1 # Duration in seconds
+    audio_frames: 48 # Number of audio frames
+    video_frames: 30 # Number of video frames
+    audio_error_frames: 0 # Number of audio error frames
+    video_error_frames: 0 # Number of video error frames
+  test_008_mp4:
+    input: test_008.mp4 # Stream name
+    duration: 1 # Duration in seconds
+    audio_frames: 48 # Number of audio frames
+    video_frames: 30 # Number of video frames
+    audio_error_frames: 0 # Number of audio error frames
+    video_error_frames: 0 # Number of video error frames
