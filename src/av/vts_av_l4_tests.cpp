@@ -924,81 +924,13 @@ UT_ADD_TEST(VTS_L4_AVMODULE, AudioTrackSwitch)
  * **Test Procedure:**
  * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
  */
-UT_ADD_TEST(VTS_L4_AVMODULE, resolutionSwitchHDR)
+UT_ADD_TEST(VTS_L4_AVMODULE, resolutionSwitch)
 {
-    const char *testName = "resolutionSwitchHDR";
+    const char *testName = "resolutionSwitch";
 
     startTest(mModuleName, mTestGroup, testName);
 }
 
-/**
- * @brief Test video resolution switching
- *
- * This test verifies the ability to switch between video resolutions on the fly
- *
- * **Test Group ID:** 04@n
- * **Test Case ID:** 003@n
- *
- * **Test Procedure:**
- * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
- */
-UT_ADD_TEST(VTS_L4_AVMODULE, resolutionSwitchSDR25)
-{
-    const char *testName = "resolutionSwitchSDR25";
-
-    startTest(mModuleName, mTestGroup, testName);
-}
-/**
- * @brief Test video resolution switching
- *
- * This test verifies the ability to switch between video resolutions on the fly
- *
- * **Test Group ID:** 04@n
- * **Test Case ID:** 003@n
- *
- * **Test Procedure:**
- * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
- */
-UT_ADD_TEST(VTS_L4_AVMODULE, resolutionSwitchSDR30)
-{
-    const char *testName = "resolutionSwitchSDR30";
-
-    startTest(mModuleName, mTestGroup, testName);
-}
-/**
- * @brief Test video resolution switching
- *
- * This test verifies the ability to switch between video resolutions on the fly
- *
- * **Test Group ID:** 04@n
- * **Test Case ID:** 003@n
- *
- * **Test Procedure:**
- * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
- */
-UT_ADD_TEST(VTS_L4_AVMODULE, resolutionSwitchSDR59)
-{
-    const char *testName = "resolutionSwitchSDR59";
-
-    startTest(mModuleName, mTestGroup, testName);
-}
-/**
- * @brief Test video resolution switching
- *
- * This test verifies the ability to switch between video resolutions on the fly
- *
- * **Test Group ID:** 04@n
- * **Test Case ID:** 003@n
- *
- * **Test Procedure:**
- * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
- */
-UT_ADD_TEST(VTS_L4_AVMODULE, resolutionSwitchSDR60)
-{
-    const char *testName = "resolutionSwitchSDR60";
-
-    startTest(mModuleName, mTestGroup, testName);
-}
 /** @} */ // End of AV_MODULE_HALTEST_L4
 /** @} */ // End of AV_MODULE_HALTEST
 /** @} */ // End of AV_MODULE

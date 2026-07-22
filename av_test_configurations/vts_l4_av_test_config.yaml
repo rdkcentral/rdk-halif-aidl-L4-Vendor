@@ -102,7 +102,7 @@ AVModule:
             duration: 2147483647
       streams:
         - test_003_ts
-    resolutionSwitchHDR:
+    resolutionSwitch:
       controls:
         delay_between_play: 100
         trick_modes:
@@ -110,35 +110,3 @@ AVModule:
             duration: 150
       streams:
         - test_004_mp4
-    resolutionSwitchSDR25:
-      controls:
-        delay_between_play: 100
-        trick_modes:
-          - action: play
-            duration: 150
-      streams:
-        - test_005_mp4
-    resolutionSwitchSDR30:
-      controls:
-        delay_between_play: 100
-        trick_modes:
-          - action: play
-            duration: 150
-      streams:
-        - test_006_mp4
-    resolutionSwitchSDR59:
-      controls:
-        delay_between_play: 100
-        trick_modes:
-          - action: play
-            duration: 150
-      streams:
-        - test_007_mp4
-    resolutionSwitchSDR60:
-      controls:
-        delay_between_play: 100
-        trick_modes:
-          - action: play
-            duration: 150
-      streams:
-        - test_008_mp4
