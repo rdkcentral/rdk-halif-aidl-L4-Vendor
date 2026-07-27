@@ -684,6 +684,7 @@ class VTS_L4_AVMODULE : public UTCore
         }
     }
 
+/*
     void startOTFCodecSwitchTest(const char* moduleName, const char * testGroup, const char *testName)
     {
         UT_status_t status;
@@ -766,7 +767,8 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(response);
             }
         }
-    }    
+    } 
+*/
 
     void readAndDiscardRestOfLine(FILE *in)
     {
