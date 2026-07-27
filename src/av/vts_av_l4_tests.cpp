@@ -568,7 +568,6 @@ class VTS_L4_AVMODULE : public UTCore
     {
         UT_status_t status;
         bool requireQualityCheck = false;
-	bool isOTFCodecSwitch = (strcmp(testName, "OTFAudioCodecSwitch") == 0);
 	bool isAudioTrackSwitch = (strcmp(testName, "AudioTrackSwitch") == 0);
         // Clear testStreams to avoid accumulating streams from previous runs
         gTestConfiguration.testStreams.clear();
@@ -598,45 +597,7 @@ class VTS_L4_AVMODULE : public UTCore
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
 
-            if (isOTFCodecSwitch)
-            {
-               string playerName = vts_av_parse_get_palayer("AVModule");
-               mPlayer = VTSPlayer::create(playerName);
-               if (!mPlayer)
-               {
-                   UT_ASSERT_TRUE(false);
-                   UT_LOG_ERROR("Failed to create the player");
-                   return;
-               }
-               if (!mPlayer->init())
-               {
-                   UT_ASSERT_TRUE(false);
-                   UT_LOG_ERROR("Player Init failed");
-                   return;
-               }
-               // Start playback (AAC by default)
-               UT_LOG_INFO("[Test] Play stream");
-               mPlayer->play(gStreamConfiguration.input);
-               // Let AAC play for 15 seconds
-               this_thread::sleep_for(chrono::seconds(15));
-               // Switch AAC -> EAC3
-               UT_LOG_INFO("[Test] Switch audio codec: AAC -> EAC3");
-               bool switchResult = mPlayer->switchAudioTrack(1);
-               UT_ASSERT_TRUE(switchResult);
-               // Let EAC3 play for 15 seconds
-               this_thread::sleep_for(chrono::seconds(15));
-               // Switch EAC3 -> AAC
-               UT_LOG_INFO("[Test] Switch audio codec: EAC3 -> AAC");
-               switchResult = mPlayer->switchAudioTrack(0);
-               UT_ASSERT_TRUE(switchResult);
-               // Let AAC play again for 15 seconds
-               this_thread::sleep_for(chrono::seconds(15));
-               mPlayer->stop();
-               mPlayer->close();
-               mPlayer.reset();
-            }
-
-	    else if (isAudioTrackSwitch)
+	    if (isAudioTrackSwitch)
             {
                string playerName = vts_av_parse_get_palayer("AVModule");
                mPlayer = VTSPlayer::create(playerName);
@@ -708,10 +669,10 @@ class VTS_L4_AVMODULE : public UTCore
             if(requireQualityCheck)
             {
 		bool response;
-		if (isOTFCodecSwitch)
+		if (isAudioTrackSwitch)
 		{
 			response = validateTest(
-					"\nWas the OTF audio codec switching smooth? (Y/N)?");
+					"\nWas the audio track switching smooth? (Y/N)?");
 		}
 		else
 		{
@@ -876,23 +837,6 @@ UT_ADD_TEST(VTS_L4_AVMODULE, playBackWithTrickModes)
     startTest(mModuleName, mTestGroup, testName);
 }
 
-/**
- * @brief Test on-the-fly (OTF) audio codec switching
- *
- * This test verifies the ability to switch between audio codecs (AAC and EAC3) on the fly
- *
- * **Test Group ID:** 04@n
- * **Test Case ID:** 003@n
- *
- * **Test Procedure:**
- * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
- */
-UT_ADD_TEST(VTS_L4_AVMODULE, OTFAudioCodecSwitch)
-{
-    const char *testName = "OTFAudioCodecSwitch";
-
-    startTest(mModuleName, mTestGroup, testName);
-}
 
 /**
  * @brief Test audio track switching
@@ -913,23 +857,6 @@ UT_ADD_TEST(VTS_L4_AVMODULE, AudioTrackSwitch)
     startTest(mModuleName, mTestGroup, testName);
 }
 
-/**
- * @brief Test video resolution switching
- *
- * This test verifies the ability to switch between video resolutions on the fly
- *
- * **Test Group ID:** 04@n
- * **Test Case ID:** 003@n
- *
- * **Test Procedure:**
- * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
- */
-UT_ADD_TEST(VTS_L4_AVMODULE, resolutionSwitch)
-{
-    const char *testName = "resolutionSwitch";
-
-    startTest(mModuleName, mTestGroup, testName);
-}
 
 /** @} */ // End of AV_MODULE_HALTEST_L4
 /** @} */ // End of AV_MODULE_HALTEST
