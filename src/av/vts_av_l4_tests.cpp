@@ -569,6 +569,9 @@ class VTS_L4_AVMODULE : public UTCore
         UT_status_t status;
         bool requireQualityCheck = false;
 	bool isAudioTrackSwitch = (strcmp(testName, "AudioTrackSwitch") == 0);
+        // TODO: Currently all platforms support only one id (0).
+        // Update this at runtime when multi-instance support is available.
+        int32_t id = 0;
         // Clear testStreams to avoid accumulating streams from previous runs
         gTestConfiguration.testStreams.clear();
         gTestConfiguration.trickModes.clear();
@@ -649,11 +652,12 @@ class VTS_L4_AVMODULE : public UTCore
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
 
             /* Validate the metrics */
-            validateAudioDecoderMetrics(AudioDecoderEventListener::getUsedDecoder(),
+
+            validateAudioDecoderMetrics(id,
                                         gAudioDecoderMetrics, gActualAudioDecoderMetrics);
-            validateVideoDecoderMetrics(AudioDecoderEventListener::getUsedDecoder(),
+            validateVideoDecoderMetrics(id,
                                         gVideoDecoderMetrics, gActualVideoDecoderMetrics);
-            validateVideoSinkMetrics(AudioDecoderEventListener::getUsedDecoder(),
+            validateVideoSinkMetrics(id,
                                      gVideoSinkMetrics, gActualVideoSinkMetrics);
 
             /* check if the decoder freed all the buffer pools */
