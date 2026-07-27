@@ -649,11 +649,11 @@ class VTS_L4_AVMODULE : public UTCore
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
 
             /* Validate the metrics */
-            validateAudioDecoderMetrics(id,
+            validateAudioDecoderMetrics(AudioDecoderEventListener::getUsedDecoder(),
                                         gAudioDecoderMetrics, gActualAudioDecoderMetrics);
-            validateVideoDecoderMetrics(id,
+            validateVideoDecoderMetrics(AudioDecoderEventListener::getUsedDecoder(),
                                         gVideoDecoderMetrics, gActualVideoDecoderMetrics);
-            validateVideoSinkMetrics(id,
+            validateVideoSinkMetrics(AudioDecoderEventListener::getUsedDecoder(),
                                      gVideoSinkMetrics, gActualVideoSinkMetrics);
 
             /* check if the decoder freed all the buffer pools */
