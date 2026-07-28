@@ -93,4 +93,4 @@ AVModule:
           - action: play
             duration: 2147483647
       streams:
-        - test_002_ts
+        - test_001_mp4
