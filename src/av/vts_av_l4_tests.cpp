@@ -569,6 +569,7 @@ class VTS_L4_AVMODULE : public UTCore
         UT_status_t status;
         bool requireQualityCheck = false;
 	bool isAudioTrackSwitch = (strcmp(testName, "AudioTrackSwitch") == 0);
+	bool isVideoTrackSwitch = (strcmp(testName, "VideoTrackSwitch") == 0);
         // TODO: Currently all platforms support only one id (0).
         // Update this at runtime when multi-instance support is available.
         int32_t id = 0;
@@ -630,6 +631,44 @@ class VTS_L4_AVMODULE : public UTCore
                // Switch track 2 -> track 1
                UT_LOG_INFO("[Test] Switch audio track: 2 -> 1");
                switchResult = mPlayer->switchAudioTrack(0);
+               UT_ASSERT_TRUE(switchResult);
+               // Let track 1 play again for 15 seconds
+               this_thread::sleep_for(chrono::seconds(30));
+               mPlayer->stop();
+               mPlayer->close();
+               mPlayer.reset();
+            }
+
+	    else if (isVideoTrackSwitch)
+            {
+               string playerName = vts_av_parse_get_palayer("AVModule");
+               mPlayer = VTSPlayer::create(playerName);
+               if (!mPlayer)
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Failed to create the player");
+                   return;
+               }
+               if (!mPlayer->init())
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Player Init failed");
+                   return;
+               }
+               // Start playback
+               UT_LOG_INFO("[Test] Play stream");
+               mPlayer->play(gStreamConfiguration.input);
+               // Let track 1 play for 30 seconds
+               this_thread::sleep_for(chrono::seconds(30));
+               // Switch track 1 -> track 2
+               UT_LOG_INFO("[Test] Switch video track: 1 -> 2");
+               bool switchResult = mPlayer->switchVideoTrack(1);
+               UT_ASSERT_TRUE(switchResult);
+               // Let track 2 play for 30 seconds
+               this_thread::sleep_for(chrono::seconds(30));
+               // Switch track 2 -> track 1
+               UT_LOG_INFO("[Test] Switch video track: 2 -> 1");
+               switchResult = mPlayer->switchVideoTrack(0);
                UT_ASSERT_TRUE(switchResult);
                // Let track 1 play again for 15 seconds
                this_thread::sleep_for(chrono::seconds(30));
@@ -863,6 +902,24 @@ UT_ADD_TEST(VTS_L4_AVMODULE, AudioTrackSwitch)
     startTest(mModuleName, mTestGroup, testName);
 }
 
+/**
+ * @brief Test video track switching
+ *
+ * This test verifies the ability to switch between video channels
+ *
+ * **Test Group ID:** 04@n
+ * **Test Case ID:** 003@n
+ *
+ * **Test Procedure:**
+ * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
+ */
+
+UT_ADD_TEST(VTS_L4_AVMODULE, VideoTrackSwitch)
+{
+    const char *testName = "VideoTrackSwitch";
+
+    startTest(mModuleName, mTestGroup, testName);
+}
 
 /** @} */ // End of AV_MODULE_HALTEST_L4
 /** @} */ // End of AV_MODULE_HALTEST
