@@ -717,6 +717,11 @@ class VTS_L4_AVMODULE : public UTCore
 			response = validateTest(
 					"\nWas the audio track switching smooth? (Y/N)?");
 		}
+		else if (isVideoTrackSwitch)
+		{
+                         response = validateTest(
+                                        "\nWas the video track switching smooth? (Y/N)?");
+		}
 		else
 		{
 			response = validateTest(
