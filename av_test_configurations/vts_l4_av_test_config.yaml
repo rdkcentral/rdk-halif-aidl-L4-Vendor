@@ -94,3 +94,11 @@ AVModule:
             duration: 2147483647
       streams:
         - test_001_mp4
+    VideoTrackSwitch:
+      controls:
+        delay_between_play: 100
+        trick_modes:
+          - action: play
+            duration: 2147483647
+      streams:
+        - test_001_mp4
