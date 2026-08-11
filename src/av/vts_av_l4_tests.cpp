@@ -621,19 +621,22 @@ class VTS_L4_AVMODULE : public UTCore
                UT_LOG_INFO("[Test] Play stream");
                mPlayer->play(gStreamConfiguration.input);
                // Let track 1 play for 30 seconds
-               this_thread::sleep_for(chrono::seconds(30));
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
                // Switch track 1 -> track 2
                UT_LOG_INFO("[Test] Switch audio track: 1 -> 2");
                bool switchResult = mPlayer->switchAudioTrack(1);
                UT_ASSERT_TRUE(switchResult);
                // Let track 2 play for 30 seconds
-               this_thread::sleep_for(chrono::seconds(30));
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
                // Switch track 2 -> track 1
                UT_LOG_INFO("[Test] Switch audio track: 2 -> 1");
                switchResult = mPlayer->switchAudioTrack(0);
                UT_ASSERT_TRUE(switchResult);
                // Let track 1 play again for 15 seconds
-               this_thread::sleep_for(chrono::seconds(30));
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
                mPlayer->stop();
                mPlayer->close();
                mPlayer.reset();
