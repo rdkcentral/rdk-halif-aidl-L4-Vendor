@@ -15,6 +15,8 @@
   - [AV Synchronization](#13-av-synchronization)
   - [Robustness & Error Handling](#14-robustness-and-error-handling)
   - [Performance & Longevity](#15-performance-and-longevity)
+  - [Audio Codec Switching](#16-Audio-Codec-Switching)
+  - [Video Codec Switching](#17-Video-Codec-Switching)
 - [Audio only Playback with Secure/non-secure](#20-audio-only-playback-with-secure-and-non-secure)
   - [Normal playback](#21-normal-playback)
   - [Pause / Resume, Trick Modes and Seek](#22-pause-resume-trick-modes-and-seek)
@@ -223,6 +225,31 @@ Validate decoder stability, memory management, and performance consistency(No A/
 | VTS_L4_H265_AC3_1102 | H.265 AC3 | vts_h265_2160p_hdr10_60.0f_BT2020_yuv420p_25M_ac3_48k_6ch_512k_a112500_v648000_10800sec.mp4 | 3 hours | No A/V drift, No frame drops, stable HDR metadata |
 | VTS_L4_VP9_OPUS_1103 | VP9 OPUS | vts_vp9_1080p_sdr_60.0f_BT709_yuv420p_15M_opus_48k_2ch_256k_a180000_v648000_10800sec.webm | 3 hours | No A/V drift, No frame drops, no resource leaks |
 | VTS_L4_AV1_AAC_1104  | AV1 AAC  | vts_av1_2160p_sdr_30.0f_BT709_yuv420p_20M_aac_48k_2ch_256k_a168750_v648000_10800sec.mp4 | 3 hours | No A/V drift, No frame drops, consistent performance |
+
+### 1.6 Audio Codec Switching
+
+**Purpose:**
+Validate the switching of multiple audio codecs on the fly, without pausing the stream. 
+
+**List of Streams:**
+
+| TC ID | Codec | Stream | Duration | Expected Result |
+| :--- | :--- | :--- | :--- | :--- |
+| VTS_L4_H265_EAC3_AAC_8001 | H265 EAC3 AAC | vts_h265_2160p_hdr10_60.0f_BT2020_yuv420p_15M_eac3_aac_48k_6ch_256k_a9375_v18000_300sec.mp4 | 300 seconds | Seamless audio codec switch |
+| VTS_L4_H265_AC3_8002 | H265 AC3 | vts_h265_2160p_hdr10_60.0f_BT2020_yuv420p_15M_ac3_48k_2ch_256k_a5625_v10800_180sec.mp4 | 180 seconds | Seamless audio track switch |
+
+### 1.7 Video Codec Switching
+
+**Purpose:**
+Validate the switching of multiple video codecs on the fly, without pausing the stream. 
+
+**List of Streams:**
+
+| TC ID | Codec | Stream | Duration | Expected Result |
+| :--- | :--- | :--- | :--- | :--- |
+| VTS_L4_H265_EAC3_AAC_8001 | H265 EAC3 AAC | vts_multi_codec_1080p_hdr10_60.0f_BT2020_yuv420p_48k_6ch_512k_a3750_v7200_120sec.mp4 | 120 seconds | Seamless video codec switch |
+
+
 
 ---
 
