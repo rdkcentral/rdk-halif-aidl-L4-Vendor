@@ -59,6 +59,7 @@
 
 #include <thread>
 #include <chrono>
+#include <cstring>
 
 #include <ut.h>
 #include <ut_log.h>
@@ -567,6 +568,8 @@ class VTS_L4_AVMODULE : public UTCore
     {
         UT_status_t status;
         bool requireQualityCheck = false;
+	bool isAudioTrackSwitch = (strcmp(testName, "AudioTrackSwitch") == 0);
+	bool isVideoTrackSwitch = (strcmp(testName, "VideoTrackSwitch") == 0);
         // TODO: Currently all platforms support only one id (0).
         // Update this at runtime when multi-instance support is available.
         int32_t id = 0;
@@ -593,12 +596,97 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(false);
                 return;
             }
+	    UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
             /* Get the metrics before start of play */
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
 
-            UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
-            playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
+	    if (isAudioTrackSwitch)
+            {
+               string playerName = vts_av_parse_get_palayer("AVModule");
+               mPlayer = VTSPlayer::create(playerName);
+               if (!mPlayer)
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Failed to create the player");
+                   return;
+               }
+               if (!mPlayer->init())
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Player Init failed");
+                   return;
+               }
+               // Start playback
+               UT_LOG_INFO("[Test] Play stream");
+               mPlayer->play(gStreamConfiguration.input);
+               // Let track 1 play for 30 seconds
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
+               // Switch track 1 -> track 2
+               UT_LOG_INFO("[Test] Switch audio track: 1 -> 2");
+               bool switchResult = mPlayer->switchAudioTrack(1);
+               UT_ASSERT_TRUE(switchResult);
+               // Let track 2 play for 30 seconds
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
+               // Switch track 2 -> track 1
+               UT_LOG_INFO("[Test] Switch audio track: 2 -> 1");
+               switchResult = mPlayer->switchAudioTrack(0);
+               UT_ASSERT_TRUE(switchResult);
+               // Let track 1 play again for 15 seconds
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
+               mPlayer->stop();
+               mPlayer->close();
+               mPlayer.reset();
+            }
+
+	    else if (isVideoTrackSwitch)
+            {
+               string playerName = vts_av_parse_get_palayer("AVModule");
+               mPlayer = VTSPlayer::create(playerName);
+               if (!mPlayer)
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Failed to create the player");
+                   return;
+               }
+               if (!mPlayer->init())
+               {
+                   UT_ASSERT_TRUE(false);
+                   UT_LOG_ERROR("Player Init failed");
+                   return;
+               }
+               // Start playback
+               UT_LOG_INFO("[Test] Play stream");
+               mPlayer->play(gStreamConfiguration.input);
+               // Let track 1 play for 30 seconds
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
+               // Switch track 1 -> track 2
+               UT_LOG_INFO("[Test] Switch video track: 1 -> 2");
+               bool switchResult = mPlayer->switchVideoTrack(1);
+               UT_ASSERT_TRUE(switchResult);
+               // Let track 2 play for 30 seconds
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
+               // Switch track 2 -> track 1
+               UT_LOG_INFO("[Test] Switch video track: 2 -> 1");
+               switchResult = mPlayer->switchVideoTrack(0);
+               UT_ASSERT_TRUE(switchResult);
+               // Let track 1 play again for 15 seconds
+	       this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+               //this_thread::sleep_for(chrono::seconds(30));
+               mPlayer->stop();
+               mPlayer->close();
+               mPlayer.reset();
+            }
+
+	    else
+	    {
+                playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
+	    }
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
 
             /* Get the metrics after start of play */
@@ -629,11 +717,112 @@ class VTS_L4_AVMODULE : public UTCore
             requireQualityCheck = gTestConfiguration.userChoice;
             if(requireQualityCheck)
             {
-                bool response = validateTest("\nIs the stream playback good (Y/N)?");
+		bool response;
+		if (isAudioTrackSwitch)
+		{
+			response = validateTest(
+					"\nWas the audio track switching smooth? (Y/N)?");
+		}
+		else if (isVideoTrackSwitch)
+		{
+                         response = validateTest(
+                                        "\nWas the video track switching smooth? (Y/N)?");
+		}
+		else
+		{
+			response = validateTest(
+                                        "\nIs the stream playback good (Y/N)?");
+		}
                 UT_ASSERT_TRUE(response);
             }
         }
     }
+
+/*
+    void startOTFCodecSwitchTest(const char* moduleName, const char * testGroup, const char *testName)
+    {
+        UT_status_t status;
+        bool requireQualityCheck = false;
+        gTestConfiguration.testStreams.clear();
+        gTestConfiguration.trickModes.clear();
+
+        status = vts_av_parse_testconfig(moduleName, testGroup, testName, gTestConfiguration);
+
+        if(status != UT_STATUS_OK)
+        {
+            UT_LOG_INFO("Failed to parse the testconfiguration");
+            UT_ASSERT_TRUE(false);
+            return;
+        }
+
+        for(auto& stream: gTestConfiguration.testStreams)
+        {
+            status = vts_av_parse_streamconfig(stream, gStreamConfiguration);
+
+            if(status != UT_STATUS_OK)
+            {
+                UT_LOG_INFO("Failed to parse the streamconfiguration");
+                UT_ASSERT_TRUE(false);
+                return;
+            }
+            UT_LOG_INFO("Testing Stream for OTF Codec Switching: %s", gStreamConfiguration.input.c_str());
+            
+            string playerName = vts_av_parse_get_palayer("AVModule");
+
+            mPlayer = VTSPlayer::create(playerName);
+            if (!mPlayer)
+            {
+                UT_ASSERT_TRUE(false);
+                UT_LOG_ERROR("Failed to create the player");
+                return;
+            }
+
+            if (!mPlayer->init())
+            {
+                UT_ASSERT_TRUE(false);
+                UT_LOG_ERROR("Player Init failed");
+                return;
+            }
+
+            // Start playing (starts with AAC by default)
+            UT_LOG_INFO("[Test] Play stream");
+            mPlayer->play(gStreamConfiguration.input);
+
+            // Let the stream play for 5 seconds (AAC format)
+            this_thread::sleep_for(chrono::seconds(5));
+
+            // Switch to EAC3 on the fly
+            UT_LOG_INFO("[Test] Switch audio codec on the fly: AAC -> EAC3");
+            bool switchResult = mPlayer->switchAudioCodec(false); // false = EAC3
+            UT_ASSERT_TRUE(switchResult);
+
+            // Let the stream play for 5 seconds (EAC3 format)
+            this_thread::sleep_for(chrono::seconds(5));
+
+            // Switch back to AAC on the fly
+            UT_LOG_INFO("[Test] Switch audio codec on the fly: EAC3 -> AAC");
+            switchResult = mPlayer->switchAudioCodec(true); // true = AAC
+            UT_ASSERT_TRUE(switchResult);
+
+            // Let the stream play for 5 seconds (AAC format again)
+            this_thread::sleep_for(chrono::seconds(5));
+
+            // Stop playback
+            mPlayer->stop();
+            mPlayer->close();
+            mPlayer.reset();
+
+            this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
+
+            requireQualityCheck = gTestConfiguration.userChoice;
+            if(requireQualityCheck)
+            {
+                bool response = validateTest("\nWas the OTF audio codec switching smooth (Y/N)?");
+                UT_ASSERT_TRUE(response);
+            }
+        }
+    } 
+*/
 
     void readAndDiscardRestOfLine(FILE *in)
     {
@@ -700,6 +889,45 @@ UT_ADD_TEST(VTS_L4_AVMODULE, NormalPlay)
 UT_ADD_TEST(VTS_L4_AVMODULE, playBackWithTrickModes)
 {
     const char *testName = "playBackWithTrickModes";
+
+    startTest(mModuleName, mTestGroup, testName);
+}
+
+
+/**
+ * @brief Test audio track switching
+ *
+ * This test verifies the ability to switch between audio tracks
+ *
+ * **Test Group ID:** 04@n
+ * **Test Case ID:** 003@n
+ *
+ * **Test Procedure:**
+ * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
+ */
+
+UT_ADD_TEST(VTS_L4_AVMODULE, AudioTrackSwitch)
+{
+    const char *testName = "AudioTrackSwitch";
+
+    startTest(mModuleName, mTestGroup, testName);
+}
+
+/**
+ * @brief Test video track switching
+ *
+ * This test verifies the ability to switch between video channels
+ *
+ * **Test Group ID:** 04@n
+ * **Test Case ID:** 003@n
+ *
+ * **Test Procedure:**
+ * Refer to UT specification documentation [audioDecoder_High-Level_TestSpecification.md](../../docs/pages/audioDecoder_High-Level_TestSpecification.md)
+ */
+
+UT_ADD_TEST(VTS_L4_AVMODULE, VideoTrackSwitch)
+{
+    const char *testName = "VideoTrackSwitch";
 
     startTest(mModuleName, mTestGroup, testName);
 }
