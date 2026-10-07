@@ -590,6 +590,13 @@ class VTS_L4_AVMODULE : public UTCore
         {
             status = vts_av_parse_streamconfig(stream, gStreamConfiguration);
 
+	    UT_LOG_INFO(
+		"Expected stream metrics: audioFrames=%u videoFrames=%u audioErrorFrames=%u videoErrorFrames=%u",
+		gStreamConfiguration.numOfAudioFrames,
+		gStreamConfiguration.numOfVideoFrames,
+		gStreamConfiguration.numOfAudioErrorFrames,
+		gStreamConfiguration.numOfVideoErrorFrames);
+
             if(status != UT_STATUS_OK)
             {
                 UT_LOG_INFO("Failed to parse the streamconfiguration");
@@ -692,6 +699,15 @@ class VTS_L4_AVMODULE : public UTCore
             /* Get the metrics after start of play */
             getAudioDecoderMetrics(gAudioDecoderMetrics);
             getVideoDecoderMetrics(gVideoDecoderMetrics);
+	    for (const auto& metrics : gVideoDecoderMetrics)
+	    {
+		    UT_LOG_INFO(
+			"Video Decoder Metrics : ID=%d decodedFrames=%d errorFrames=%d droppedFrames=%d,
+			metrics.id,
+			metrics.decodedFrames,
+			metrics.errorFrames,
+			metrics.droppedFrames);
+	    }
             getVideoSinkMetrics(gVideoSinkMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gAfterHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
