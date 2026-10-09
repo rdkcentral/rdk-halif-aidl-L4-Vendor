@@ -702,7 +702,7 @@ class VTS_L4_AVMODULE : public UTCore
 	    for (const auto& metrics : gVideoDecoderMetrics)
 	    {
 		    UT_LOG_INFO(
-			"Video Decoder Metrics : ID=%d decodedFrames=%d errorFrames=%d droppedFrames=%d,
+			"Video Decoder Metrics : ID=%d decodedFrames=%d errorFrames=%d droppedFrames=%d",
 			metrics.id,
 			metrics.decodedFrames,
 			metrics.errorFrames,
