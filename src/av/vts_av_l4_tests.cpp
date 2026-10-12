@@ -566,6 +566,7 @@ class VTS_L4_AVMODULE : public UTCore
 
     void startTest(const char* moduleName, const char * testGroup, const char *testName)
     {
+	UT_LOG_INFO("METRICS_DEBUG: Entering startTest()");
         UT_status_t status;
         bool requireQualityCheck = false;
 	bool isAudioTrackSwitch = (strcmp(testName, "AudioTrackSwitch") == 0);
@@ -588,14 +589,8 @@ class VTS_L4_AVMODULE : public UTCore
 
         for(auto& stream: gTestConfiguration.testStreams)
         {
+	    UT_LOG_INFO("METRICS_DEBUG: Processing stream = %s", stream.c_str());
             status = vts_av_parse_streamconfig(stream, gStreamConfiguration);
-
-	    UT_LOG_INFO(
-		"Expected stream metrics: audioFrames=%u videoFrames=%u audioErrorFrames=%u videoErrorFrames=%u",
-		gStreamConfiguration.numOfAudioFrames,
-		gStreamConfiguration.numOfVideoFrames,
-		gStreamConfiguration.numOfAudioErrorFrames,
-		gStreamConfiguration.numOfVideoErrorFrames);
 
             if(status != UT_STATUS_OK)
             {
@@ -603,6 +598,13 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(false);
                 return;
             }
+
+	    UT_LOG_INFO(
+		"Expected stream metrics: audioFrames=%u videoFrames=%u audioErrorFrames=%u videoErrorFrames=%u",
+		gStreamConfiguration.numOfAudioFrames,
+		gStreamConfiguration.numOfVideoFrames,
+		gStreamConfiguration.numOfAudioErrorFrames,
+		gStreamConfiguration.numOfVideoErrorFrames);
 	    UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
             /* Get the metrics before start of play */
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
@@ -696,9 +698,15 @@ class VTS_L4_AVMODULE : public UTCore
 	    }
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
 
+	    UT_LOG_INFO("METRICS_DEBUG: Playback section completed");
+
             /* Get the metrics after start of play */
             getAudioDecoderMetrics(gAudioDecoderMetrics);
+	    UT_LOG_INFO("METRICS_DEBUG: Video decoder list size = %d",
+			    static_cast<int>(mVideoDecoderList.size()));
             getVideoDecoderMetrics(gVideoDecoderMetrics);
+	    UT_LOG_INFO("METRIC_DEBUG: Collected video metrics count = %d",
+			    static_cast<int>(gVideoDecoderMetrics.size()));
 	    for (const auto& metrics : gVideoDecoderMetrics)
 	    {
 		    UT_LOG_INFO(
