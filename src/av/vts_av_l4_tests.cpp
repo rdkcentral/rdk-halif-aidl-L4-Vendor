@@ -705,7 +705,7 @@ class VTS_L4_AVMODULE : public UTCore
 	    UT_LOG_INFO("METRICS_DEBUG: Video decoder list size = %d",
 			    static_cast<int>(mVideoDecoderList.size()));
             getVideoDecoderMetrics(gVideoDecoderMetrics);
-	    UT_LOG_INFO("METRIC_DEBUG: Collected video metrics count = %d",
+	    UT_LOG_INFO("METRICS_DEBUG: Collected video metrics count = %d",
 			    static_cast<int>(gVideoDecoderMetrics.size()));
 	    for (const auto& metrics : gVideoDecoderMetrics)
 	    {
