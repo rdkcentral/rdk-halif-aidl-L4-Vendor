@@ -694,7 +694,9 @@ class VTS_L4_AVMODULE : public UTCore
 
 	    else
 	    {
+		UT_LOG_INFO("METRICS_DEBUG: Before playWithTrickModes");
                 playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
+		UT_LOG_INFO("METRICS_DEBUG: After playWithTrickModes");
 	    }
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
 
