@@ -447,7 +447,7 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(false);
             }
             if(videoDecoderMetrics[i].droppedFrames != -1 &&
-               videoDecoderMetrics[i].droppedFrames != 0))
+               videoDecoderMetrics[i].droppedFrames != 0)
             {
                 UT_ASSERT_TRUE(false);
             }
