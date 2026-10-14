@@ -442,7 +442,7 @@ class VTS_L4_AVMODULE : public UTCore
             {
 	        UT_LOG_ERROR(
 			"Video error frames mismatch : Expected = %u Actual = %d ",
-			gStreamConfiguration.numOfVideoErrorFrames
+			gStreamConfiguration.numOfVideoErrorFrames,
 			videoDecoderMetrics[i].errorFrames);
                 UT_ASSERT_TRUE(false);
             }
