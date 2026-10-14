@@ -722,6 +722,12 @@ class VTS_L4_AVMODULE : public UTCore
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gAfterHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
 
+	    validateExpectedStreamMetrics(
+			    gStreamConfiguration,
+			    gAudioDecoderMetrics,
+			    gVideoDecoderMetrics,
+			    id);
+
             /* Validate the metrics */
 
             validateAudioDecoderMetrics(id,
@@ -764,6 +770,80 @@ class VTS_L4_AVMODULE : public UTCore
         }
     }
 
+   void validateExpectedStreamMetrics(
+       const vtsL4AVStreamConfiguration_t& expected,
+       const vector<audioDecoderMetrics_t>& audioMetrics,
+       const vector<videoDecoderMetrics_t>& videoMetrics,
+       int32_t id)
+    {
+       bool audioDecoderFound = false;
+       bool videoDecoderFound = false;
+
+       // Validate audio decoder metrics against YAML
+       for (const auto& metrics : audioMetrics)
+       {
+           if (metrics.id != id)
+               continue;
+
+           audioDecoderFound = true;
+
+           UT_LOG_INFO(
+               "Audio Metrics Comparison: Expected decodedFrames=%u, "
+               "Actual decodedFrames=%d, Expected errorFrames=%u, "
+               "Actual errorFrames=%d",
+               expected.numOfAudioFrames,
+               metrics.decodedFrames,
+               expected.numOfAudioErrorFrames,
+               metrics.errorFrames);
+
+           UT_ASSERT_TRUE(metrics.decodedFrames >= 0);
+           UT_ASSERT_TRUE(metrics.errorFrames >= 0);
+
+           UT_ASSERT_TRUE(
+               metrics.decodedFrames ==
+               static_cast<int32_t>(expected.numOfAudioFrames));
+
+           UT_ASSERT_TRUE(
+               metrics.errorFrames ==
+               static_cast<int32_t>(expected.numOfAudioErrorFrames));
+
+           break;
+       }
+
+       // Validate video decoder metrics against YAML
+       for (const auto& metrics : videoMetrics)
+       {
+           if (metrics.id != id)
+               continue;
+
+           videoDecoderFound = true;
+
+           UT_LOG_INFO(
+               "Video Metrics Comparison: Expected decodedFrames=%u, "
+               "Actual decodedFrames=%d, Expected errorFrames=%u, "
+               "Actual errorFrames=%d",
+               expected.numOfVideoFrames,
+               metrics.decodedFrames,
+               expected.numOfVideoErrorFrames,
+               metrics.errorFrames);
+
+           UT_ASSERT_TRUE(metrics.decodedFrames >= 0);
+           UT_ASSERT_TRUE(metrics.errorFrames >= 0);
+
+           UT_ASSERT_TRUE(
+               metrics.decodedFrames ==
+               static_cast<int32_t>(expected.numOfVideoFrames));
+
+           UT_ASSERT_TRUE(
+               metrics.errorFrames ==
+               static_cast<int32_t>(expected.numOfVideoErrorFrames));
+
+           break;
+       }
+
+       UT_ASSERT_TRUE(audioDecoderFound);
+       UT_ASSERT_TRUE(videoDecoderFound);
+    }
 /*
     void startOTFCodecSwitchTest(const char* moduleName, const char * testGroup, const char *testName)
     {
