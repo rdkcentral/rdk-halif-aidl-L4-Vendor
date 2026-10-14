@@ -578,16 +578,13 @@ class VTS_L4_AVMODULE : public UTCore
 	UT_LOG_INFO("METRICS_DEBUG: Reading metrics before the player stops");
 
 	getVideoDecoderMetrics(gVideoDecoderMetrics);
-	for (const auto& metrics : gVideoDecoderMetrics)
-        {
-           UT_LOG_INFO(
-               "Video metrics BEFORE stop: ID=%d decodedFrames=%d "
-               "errorFrames=%d droppedFrames=%d",
-               metrics.id,
-               metrics.decodedFrames,
-               metrics.errorFrames,
-               metrics.droppedFrames);
-        }
+        UT_LOG_INFO(
+            "Video metrics BEFORE stop: ID=%d decodedFrames=%d "
+            "errorFrames=%d droppedFrames=%d",
+            gVideoDecoderMetrics[0].id,
+            gVideoDecoderMetrics[0].decodedFrames,
+            gVideoDecoderMetrics[0].errorFrames,
+            gVideoDecoderMetrics[0].droppedFrames);
 
 
         mPlayer->stop();
