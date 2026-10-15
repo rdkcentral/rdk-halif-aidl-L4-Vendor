@@ -402,7 +402,7 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(false);
             }
             if(audioDecoderMetrics[i].errorFrames != -1 &&
-               audioDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioErrorFrames))
+               audioDecoderMetrics[i].errorFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioErrorFrames))
             {
 		UT_LOG_ERROR(
 			"Audio error frames mismatch: Expected = %u Actual = %d",
