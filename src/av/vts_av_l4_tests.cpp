@@ -586,6 +586,21 @@ class VTS_L4_AVMODULE : public UTCore
             gVideoDecoderMetrics[0].errorFrames,
             gVideoDecoderMetrics[0].droppedFrames);
 
+	getAudioDecoderMetrics(gAudioDecoderMetrics);
+        UT_LOG_INFO(
+            "Audio metrics BEFORE stop: ID=%d decodedFrames=%d "
+            "errorFrames=%d droppedFrames=%d",
+            gAudioDecoderMetrics[0].id,
+            gAudioDecoderMetrics[0].decodedFrames,
+            gAudioDecoderMetrics[0].errorFrames,
+            gAudioDecoderMetrics[0].droppedFrames);
+
+	validateAudioDecoderMetrics(id,
+                                    gAudioDecoderMetrics, gActualAudioDecoderMetrics);
+        validateVideoDecoderMetrics(id,
+                                    gVideoDecoderMetrics, gActualVideoDecoderMetrics);
+        validateVideoSinkMetrics(id,
+                                 gVideoSinkMetrics, gActualVideoSinkMetrics);
 
         mPlayer->stop();
         mPlayer->close();
@@ -737,21 +752,12 @@ class VTS_L4_AVMODULE : public UTCore
             getVideoDecoderMetrics(gVideoDecoderMetrics);
 	    UT_LOG_INFO("METRICS_DEBUG: Collected video metrics count = %d",
 			    static_cast<int>(gVideoDecoderMetrics.size()));
-	    for (const auto& metrics : gVideoDecoderMetrics)
-	    {
-		    UT_LOG_INFO(
-			"Video Decoder Metrics : ID=%d decodedFrames=%d errorFrames=%d droppedFrames=%d",
-			metrics.id,
-			metrics.decodedFrames,
-			metrics.errorFrames,
-			metrics.droppedFrames);
-	    }
             getVideoSinkMetrics(gVideoSinkMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gAfterHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
 
 
-            /* Validate the metrics */
+            /* Validate the metrics 
 
             validateAudioDecoderMetrics(id,
                                         gAudioDecoderMetrics, gActualAudioDecoderMetrics);
@@ -759,6 +765,7 @@ class VTS_L4_AVMODULE : public UTCore
                                         gVideoDecoderMetrics, gActualVideoDecoderMetrics);
             validateVideoSinkMetrics(id,
                                      gVideoSinkMetrics, gActualVideoSinkMetrics);
+	    */
 
             /* check if the decoder freed all the buffer pools */
             UT_ASSERT_TRUE(gBeforeHeapMetrics.secure == gAfterHeapMetrics.secure);
