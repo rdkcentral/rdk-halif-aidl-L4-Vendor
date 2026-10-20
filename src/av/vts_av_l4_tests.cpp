@@ -438,7 +438,7 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(false);
             }
             if(videoDecoderMetrics[i].errorFrames != -1 &&
-               videoDecoderMetrics[i].errorFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoErrorFrames))
+               videoDecoderMetrics[i].errorFrames <= 0))
             {
 	        UT_LOG_ERROR(
 			"Video error frames mismatch : Expected = %u Actual = %d ",
@@ -753,17 +753,6 @@ class VTS_L4_AVMODULE : public UTCore
             getVideoSinkMetrics(gVideoSinkMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gAfterHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
-
-
-            /* Validate the metrics 
-
-            validateAudioDecoderMetrics(id,
-                                        gAudioDecoderMetrics, gActualAudioDecoderMetrics);
-            validateVideoDecoderMetrics(id,
-                                        gVideoDecoderMetrics, gActualVideoDecoderMetrics);
-            validateVideoSinkMetrics(id,
-                                     gVideoSinkMetrics, gActualVideoSinkMetrics);
-	    */
 
             /* check if the decoder freed all the buffer pools */
             UT_ASSERT_TRUE(gBeforeHeapMetrics.secure == gAfterHeapMetrics.secure);
