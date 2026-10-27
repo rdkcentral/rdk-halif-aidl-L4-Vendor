@@ -438,7 +438,7 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(false);
             }
             if(videoDecoderMetrics[i].errorFrames != -1 &&
-               videoDecoderMetrics[i].errorFrames <= 0))
+               videoDecoderMetrics[i].errorFrames <= 0)
             {
 	        UT_LOG_ERROR(
 			"Video error frames mismatch : Expected = %u Actual = %d ",
