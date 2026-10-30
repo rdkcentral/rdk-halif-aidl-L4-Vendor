@@ -630,7 +630,7 @@ class VTS_L4_AVMODULE : public UTCore
 
         for(auto& stream: gTestConfiguration.testStreams)
         {
-	    UT_LOG_INFO("METRICS_DEBUG: Processing stream = %s", stream.c_str());
+            UT_LOG_INFO("METRICS_DEBUG: Processing stream = %s", stream.c_str());
             status = vts_av_parse_streamconfig(stream, gStreamConfiguration);
 
             if(status != UT_STATUS_OK)
