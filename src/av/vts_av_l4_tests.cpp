@@ -640,13 +640,13 @@ class VTS_L4_AVMODULE : public UTCore
                 return;
             }
 
-	    UT_LOG_INFO(
-		"Expected stream metrics: audioFrames=%u videoFrames=%u audioErrorFrames=%u videoErrorFrames=%u",
-		gStreamConfiguration.numOfAudioFrames,
-		gStreamConfiguration.numOfVideoFrames,
-		gStreamConfiguration.numOfAudioErrorFrames,
-		gStreamConfiguration.numOfVideoErrorFrames);
-	    UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
+            UT_LOG_INFO(
+                "Expected stream metrics: audioFrames=%u videoFrames=%u audioErrorFrames=%u videoErrorFrames=%u",
+                gStreamConfiguration.numOfAudioFrames,
+                gStreamConfiguration.numOfVideoFrames,
+                gStreamConfiguration.numOfAudioErrorFrames,
+                gStreamConfiguration.numOfVideoErrorFrames);
+            UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
             /* Get the metrics before start of play */
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gBeforeSecureHeapMetrics);
