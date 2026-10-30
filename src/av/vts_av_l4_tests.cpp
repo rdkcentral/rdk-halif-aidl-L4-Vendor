@@ -595,11 +595,14 @@ class VTS_L4_AVMODULE : public UTCore
             gAudioDecoderMetrics[0].errorFrames,
             gAudioDecoderMetrics[0].droppedFrames);
 
+	getVideoSinkMetrics(gVideoSinkMetrics);
+
 	validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
                                     gAudioDecoderMetrics, gActualAudioDecoderMetrics);
         validateVideoDecoderMetrics(gVideoDecoderMetrics[0].id,
                                     gVideoDecoderMetrics, gActualVideoDecoderMetrics);
-
+        validateVideoSinkMetrics(gVideoSinkMetrics[0].id,
+                                    gVideoSinkMetrics, gActualVideoSinkMetrics);
         mPlayer->stop();
         mPlayer->close();
         mPlayer.reset();
