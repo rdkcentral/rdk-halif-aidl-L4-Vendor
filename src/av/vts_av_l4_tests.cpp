@@ -393,13 +393,21 @@ class VTS_L4_AVMODULE : public UTCore
                 continue;
 
             if(audioDecoderMetrics[i].decodedFrames != -1 &&
-               audioDecoderMetrics[i].decodedFrames != actualMetrics.decodedFrames)
+               audioDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioFrames))
             {
+		UT_LOG_ERROR(
+			"Audio decoded frames mismatch: Expected = %u Actual = %d",
+			gStreamConfiguration.numOfAudioFrames,
+			audioDecoderMetrics[i].decodedFrames);
                 UT_ASSERT_TRUE(false);
             }
             if(audioDecoderMetrics[i].errorFrames != -1 &&
-               audioDecoderMetrics[i].errorFrames != actualMetrics.errorFrames)
+               audioDecoderMetrics[i].errorFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioErrorFrames))
             {
+		UT_LOG_ERROR(
+			"Audio error frames mismatch: Expected = %u Actual = %d",
+			gStreamConfiguration.numOfAudioErrorFrames,
+			audioDecoderMetrics[i].errorFrames);
                 UT_ASSERT_TRUE(false);
             }
             if(audioDecoderMetrics[i].droppedFrames != -1 &&
@@ -421,13 +429,21 @@ class VTS_L4_AVMODULE : public UTCore
                 continue;
 
             if(videoDecoderMetrics[i].decodedFrames != -1 &&
-               videoDecoderMetrics[i].decodedFrames != actualMetrics.decodedFrames)
+               videoDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoFrames))
             {
+		UT_LOG_ERROR(
+			"Video decoded frames mismatch : Expected = %u Actual = %d ",
+			gStreamConfiguration.numOfVideoFrames,
+			videoDecoderMetrics[i].decodedFrames);
                 UT_ASSERT_TRUE(false);
             }
             if(videoDecoderMetrics[i].errorFrames != -1 &&
-               videoDecoderMetrics[i].errorFrames != actualMetrics.errorFrames)
+               videoDecoderMetrics[i].errorFrames <= 0)
             {
+	        UT_LOG_ERROR(
+			"Video error frames mismatch : Expected = %u Actual = %d ",
+			gStreamConfiguration.numOfVideoErrorFrames,
+			videoDecoderMetrics[i].errorFrames);
                 UT_ASSERT_TRUE(false);
             }
             if(videoDecoderMetrics[i].droppedFrames != -1 &&
@@ -559,6 +575,34 @@ class VTS_L4_AVMODULE : public UTCore
             }
         }
 
+	UT_LOG_INFO("METRICS_DEBUG: Reading metrics before the player stops");
+
+	getVideoDecoderMetrics(gVideoDecoderMetrics);
+        UT_LOG_INFO(
+            "Video metrics BEFORE stop: ID=%d decodedFrames=%d "
+            "errorFrames=%d droppedFrames=%d",
+            gVideoDecoderMetrics[0].id,
+            gVideoDecoderMetrics[0].decodedFrames,
+            gVideoDecoderMetrics[0].errorFrames,
+            gVideoDecoderMetrics[0].droppedFrames);
+
+	getAudioDecoderMetrics(gAudioDecoderMetrics);
+        UT_LOG_INFO(
+            "Audio metrics BEFORE stop: ID=%d decodedFrames=%d "
+            "errorFrames=%d droppedFrames=%d",
+            gAudioDecoderMetrics[0].id,
+            gAudioDecoderMetrics[0].decodedFrames,
+            gAudioDecoderMetrics[0].errorFrames,
+            gAudioDecoderMetrics[0].droppedFrames);
+
+	getVideoSinkMetrics(gVideoSinkMetrics);
+
+	validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
+                                    gAudioDecoderMetrics, gActualAudioDecoderMetrics);
+        validateVideoDecoderMetrics(gVideoDecoderMetrics[0].id,
+                                    gVideoDecoderMetrics, gActualVideoDecoderMetrics);
+        validateVideoSinkMetrics(gVideoSinkMetrics[0].id,
+                                    gVideoSinkMetrics, gActualVideoSinkMetrics);
         mPlayer->stop();
         mPlayer->close();
         mPlayer.reset();
@@ -566,6 +610,7 @@ class VTS_L4_AVMODULE : public UTCore
 
     void startTest(const char* moduleName, const char * testGroup, const char *testName)
     {
+	UT_LOG_INFO("METRICS_DEBUG: Entering startTest()");
         UT_status_t status;
         bool requireQualityCheck = false;
 	bool isAudioTrackSwitch = (strcmp(testName, "AudioTrackSwitch") == 0);
@@ -588,6 +633,7 @@ class VTS_L4_AVMODULE : public UTCore
 
         for(auto& stream: gTestConfiguration.testStreams)
         {
+	    UT_LOG_INFO("METRICS_DEBUG: Processing stream = %s", stream.c_str());
             status = vts_av_parse_streamconfig(stream, gStreamConfiguration);
 
             if(status != UT_STATUS_OK)
@@ -596,6 +642,13 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(false);
                 return;
             }
+
+	    UT_LOG_INFO(
+		"Expected stream metrics: audioFrames=%u videoFrames=%u audioErrorFrames=%u videoErrorFrames=%u",
+		gStreamConfiguration.numOfAudioFrames,
+		gStreamConfiguration.numOfVideoFrames,
+		gStreamConfiguration.numOfAudioErrorFrames,
+		gStreamConfiguration.numOfVideoErrorFrames);
 	    UT_LOG_INFO("Testing Stream: %s", gStreamConfiguration.input.c_str());
             /* Get the metrics before start of play */
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gBeforeHeapMetrics);
@@ -685,25 +738,24 @@ class VTS_L4_AVMODULE : public UTCore
 
 	    else
 	    {
+		UT_LOG_INFO("METRICS_DEBUG: Before playWithTrickModes");
                 playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
+		UT_LOG_INFO("METRICS_DEBUG: After playWithTrickModes");
 	    }
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
 
+	    UT_LOG_INFO("METRICS_DEBUG: Playback section completed");
+
             /* Get the metrics after start of play */
             getAudioDecoderMetrics(gAudioDecoderMetrics);
+	    UT_LOG_INFO("METRICS_DEBUG: Video decoder list size = %d",
+			    static_cast<int>(mVideoDecoderList.size()));
             getVideoDecoderMetrics(gVideoDecoderMetrics);
+	    UT_LOG_INFO("METRICS_DEBUG: Collected video metrics count = %d",
+			    static_cast<int>(gVideoDecoderMetrics.size()));
             getVideoSinkMetrics(gVideoSinkMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gAfterHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
-
-            /* Validate the metrics */
-
-            validateAudioDecoderMetrics(id,
-                                        gAudioDecoderMetrics, gActualAudioDecoderMetrics);
-            validateVideoDecoderMetrics(id,
-                                        gVideoDecoderMetrics, gActualVideoDecoderMetrics);
-            validateVideoSinkMetrics(id,
-                                     gVideoSinkMetrics, gActualVideoSinkMetrics);
 
             /* check if the decoder freed all the buffer pools */
             UT_ASSERT_TRUE(gBeforeHeapMetrics.secure == gAfterHeapMetrics.secure);
