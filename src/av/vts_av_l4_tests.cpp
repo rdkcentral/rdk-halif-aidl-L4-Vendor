@@ -576,7 +576,7 @@ class VTS_L4_AVMODULE : public UTCore
         }
 	UT_LOG_INFO("METRICS_DEBUG: Reading metrics before the player stops");
 	getVideoDecoderMetrics(gVideoDecoderMetrics);
-        UT_LOG_INFO(
+	UT_LOG_INFO(
             "Video metrics BEFORE stop: ID=%d decodedFrames=%d "
             "errorFrames=%d droppedFrames=%d",
             gVideoDecoderMetrics[0].id,
@@ -585,7 +585,7 @@ class VTS_L4_AVMODULE : public UTCore
             gVideoDecoderMetrics[0].droppedFrames);
 
 	getAudioDecoderMetrics(gAudioDecoderMetrics);
-        UT_LOG_INFO(
+	UT_LOG_INFO(
             "Audio metrics BEFORE stop: ID=%d decodedFrames=%d "
             "errorFrames=%d droppedFrames=%d",
             gAudioDecoderMetrics[0].id,
