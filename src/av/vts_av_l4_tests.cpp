@@ -431,19 +431,19 @@ class VTS_L4_AVMODULE : public UTCore
             if(videoDecoderMetrics[i].decodedFrames != -1 &&
                videoDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoFrames))
             {
-		UT_LOG_ERROR(
-			"Video decoded frames mismatch : Expected = %u Actual = %d ",
-			gStreamConfiguration.numOfVideoFrames,
-			videoDecoderMetrics[i].decodedFrames);
+                UT_LOG_ERROR(
+                        "Video decoded frames mismatch : Expected = %u Actual = %d ",
+                        gStreamConfiguration.numOfVideoFrames,
+                        videoDecoderMetrics[i].decodedFrames);
                 UT_ASSERT_TRUE(false);
             }
             if(videoDecoderMetrics[i].errorFrames != -1 &&
                videoDecoderMetrics[i].errorFrames <= 0)
             {
-	        UT_LOG_ERROR(
-			"Video error frames mismatch : Expected = %u Actual = %d ",
-			gStreamConfiguration.numOfVideoErrorFrames,
-			videoDecoderMetrics[i].errorFrames);
+                UT_LOG_ERROR(
+                        "Video error frames mismatch : Expected = %u Actual = %d ",
+                        gStreamConfiguration.numOfVideoErrorFrames,
+                        videoDecoderMetrics[i].errorFrames);
                 UT_ASSERT_TRUE(false);
             }
             if(videoDecoderMetrics[i].droppedFrames != -1 &&
