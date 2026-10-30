@@ -735,21 +735,21 @@ class VTS_L4_AVMODULE : public UTCore
 
 	    else
 	    {
-		UT_LOG_INFO("METRICS_DEBUG: Before playWithTrickModes");
+                UT_LOG_INFO("METRICS_DEBUG: Before playWithTrickModes");
                 playWithTrickModes(gStreamConfiguration.input, gTestConfiguration.trickModes);
-		UT_LOG_INFO("METRICS_DEBUG: After playWithTrickModes");
+                UT_LOG_INFO("METRICS_DEBUG: After playWithTrickModes");
 	    }
             this_thread::sleep_for(chrono::milliseconds(gTestConfiguration.playDealy));
 
-	    UT_LOG_INFO("METRICS_DEBUG: Playback section completed");
+            UT_LOG_INFO("METRICS_DEBUG: Playback section completed");
 
             /* Get the metrics after start of play */
             getAudioDecoderMetrics(gAudioDecoderMetrics);
-	    UT_LOG_INFO("METRICS_DEBUG: Video decoder list size = %d",
-			    static_cast<int>(mVideoDecoderList.size()));
+            UT_LOG_INFO("METRICS_DEBUG: Video decoder list size = %d",
+                            static_cast<int>(mVideoDecoderList.size()));
             getVideoDecoderMetrics(gVideoDecoderMetrics);
-	    UT_LOG_INFO("METRICS_DEBUG: Collected video metrics count = %d",
-			    static_cast<int>(gVideoDecoderMetrics.size()));
+            UT_LOG_INFO("METRICS_DEBUG: Collected video metrics count = %d",
+                            static_cast<int>(gVideoDecoderMetrics.size()));
             getVideoSinkMetrics(gVideoSinkMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, false, gAfterHeapMetrics);
             AVBUFFER_GETMETRICS(gAVBufferManager, true, gAfterSecureHeapMetrics);
