@@ -392,8 +392,12 @@ class VTS_L4_AVMODULE : public UTCore
             if(audioDecoderMetrics[i].id != id)
                 continue;
 
-            if(audioDecoderMetrics[i].decodedFrames != -1 &&
-               audioDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioFrames))
+	    if(audioDecoderMetrics[i].decodedFrames == -1)
+            {
+                UT_LOG_INFO("Decoded frames metrics not supported in HAL");
+            }
+	    else if(audioDecoderMetrics[i].decodedFrames != -1 &&
+                    audioDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioFrames))
             {
                 UT_LOG_ERROR(
                         "Audio decoded frames mismatch: Expected = %u Actual = %d",
@@ -401,8 +405,13 @@ class VTS_L4_AVMODULE : public UTCore
                         audioDecoderMetrics[i].decodedFrames);
                 UT_ASSERT_TRUE(false);
             }
-            if(audioDecoderMetrics[i].errorFrames != -1 &&
-               audioDecoderMetrics[i].errorFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioErrorFrames))
+
+	    if(audioDecoderMetrics[i].errorFrames == -1)
+            {
+                UT_LOG_INFO("Error frames metrics not supported in HAL");
+            }
+	    else if(audioDecoderMetrics[i].errorFrames != -1 &&
+                    audioDecoderMetrics[i].errorFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioErrorFrames))
             {
                 UT_LOG_ERROR(
                         "Audio error frames mismatch: Expected = %u Actual = %d",
@@ -410,9 +419,17 @@ class VTS_L4_AVMODULE : public UTCore
                         audioDecoderMetrics[i].errorFrames);
                 UT_ASSERT_TRUE(false);
             }
-            if(audioDecoderMetrics[i].droppedFrames != -1 &&
-               audioDecoderMetrics[i].droppedFrames != 0)
+
+	    if(audioDecoderMetrics[i].droppedFrames == -1)
             {
+                UT_LOG_INFO("Metrics for dropped frames not supported in HAL");
+            }
+	    else if(audioDecoderMetrics[i].droppedFrames != -1 &&
+                    audioDecoderMetrics[i].droppedFrames != 0)
+            {
+                UT_LOG_ERROR(
+                         "Dropped Audio frames observed : Expected = 0 Actual = %d",
+                         audioDecoderMetrics[i].droppedFrames);
                 UT_ASSERT_TRUE(false);
             }
             break;
@@ -428,8 +445,12 @@ class VTS_L4_AVMODULE : public UTCore
             if(videoDecoderMetrics[i].id != id)
                 continue;
 
-            if(videoDecoderMetrics[i].decodedFrames != -1 &&
-               videoDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoFrames))
+            if(videoDecoderMetrics[i].decodedFrames == -1)
+            {
+                UT_LOG_INFO("Metrics for decoded frames not supported in HAL");
+            }
+	    else if(videoDecoderMetrics[i].decodedFrames != -1 &&
+                    videoDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoFrames))
             {
                 UT_LOG_ERROR(
                         "Video decoded frames mismatch : Expected = %u Actual = %d ",
@@ -437,8 +458,13 @@ class VTS_L4_AVMODULE : public UTCore
                         videoDecoderMetrics[i].decodedFrames);
                 UT_ASSERT_TRUE(false);
             }
-            if(videoDecoderMetrics[i].errorFrames != -1 &&
-               videoDecoderMetrics[i].errorFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoErrorFrames))
+
+            if(videoDecoderMetrics[i].errorFrames == -1)
+            {
+                UT_LOG_INFO("Metrics for error frames not supported in HAL");
+            }
+	    else if(videoDecoderMetrics[i].errorFrames != -1 &&
+                    videoDecoderMetrics[i].errorFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoErrorFrames))
             {
                 UT_LOG_ERROR(
                         "Video error frames mismatch : Expected = %u Actual = %d ",
@@ -446,9 +472,16 @@ class VTS_L4_AVMODULE : public UTCore
                         videoDecoderMetrics[i].errorFrames);
                 UT_ASSERT_TRUE(false);
             }
-            if(videoDecoderMetrics[i].droppedFrames != -1 &&
-               videoDecoderMetrics[i].droppedFrames != 0)
+            if(videoDecoderMetrics[i].droppedFrames == -1)
             {
+                UT_LOG_INFO("Metrics for dropped frames not supported in HAL");
+            }
+	    else if(videoDecoderMetrics[i].droppedFrames != -1 &&
+                    videoDecoderMetrics[i].droppedFrames != 0)
+            {
+                UT_LOG_ERROR(
+                        "Video dropped frames mismatch : Expected = 0 Actual = %d",
+			videoDecoderMetrics[i].droppedFrames);
                 UT_ASSERT_TRUE(false);
             }
             break;
@@ -470,18 +503,31 @@ class VTS_L4_AVMODULE : public UTCore
             {
                 UT_ASSERT_TRUE(false);
             }*/
-            if(videoSinkMetrics[i].receivedFrames != -1 &&
-               videoSinkMetrics[i].receivedFrames != actualMetrics.receivedFrames)
+            if(videoSinkMetrics[i].receivedFrames == -1)
+            {
+                UT_LOG_INFO("Metrics for video sink received frames not supported in HAL");
+            }
+	    else if(videoSinkMetrics[i].receivedFrames != -1 &&
+                    videoSinkMetrics[i].receivedFrames != actualMetrics.receivedFrames)
             {
                 UT_ASSERT_TRUE(false);
             }
-            if(videoSinkMetrics[i].framesDroppedLate != -1 &&
-               videoSinkMetrics[i].framesDroppedLate != 0)
+
+            if(videoSinkMetrics[i].framesDroppedLate == -1)
+            {
+                UT_LOG_INFO("Metrics for video sink frames dropped late not supported in HAL");
+            }
+	    else if(videoSinkMetrics[i].framesDroppedLate != -1 &&
+                    videoSinkMetrics[i].framesDroppedLate != 0)
             {
                 UT_ASSERT_TRUE(false);
             }
-            if(videoSinkMetrics[i].framesRepeatedMiss != -1 &&
-               videoSinkMetrics[i].framesRepeatedMiss != 0)
+            if(videoSinkMetrics[i].framesRepeatedMiss == -1)
+            {
+                UT_LOG_INFO("Metrics for video sink frames repeated miss not supported in HAL");
+            }
+	    else if(videoSinkMetrics[i].framesRepeatedMiss != -1 &&
+                    videoSinkMetrics[i].framesRepeatedMiss != 0)
             {
                 UT_ASSERT_TRUE(false);
             }
