@@ -599,7 +599,6 @@ class VTS_L4_AVMODULE : public UTCore
         {
             UT_LOG_INFO("Trick mode used. Hence skipping metrics validation");
         }
-
 	else
         {
             validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
@@ -803,7 +802,9 @@ class VTS_L4_AVMODULE : public UTCore
             if(m.action == VTS_L4_PLAYER_SEEK ||
                m.action == VTS_L4_PLAYER_TRICK_MODE ||
 	       m.action == VTS_L4_PLAYER_PAUSE)
-            return true;
+            {
+                return true;
+            }
         }
         return false;
     }
