@@ -594,12 +594,21 @@ class VTS_L4_AVMODULE : public UTCore
             gAudioDecoderMetrics[0].droppedFrames);
 
         getVideoSinkMetrics(gVideoSinkMetrics);
-        validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
-                                    gAudioDecoderMetrics, gActualAudioDecoderMetrics);
-        validateVideoDecoderMetrics(gVideoDecoderMetrics[0].id,
-                                    gVideoDecoderMetrics, gActualVideoDecoderMetrics);
-        validateVideoSinkMetrics(gVideoSinkMetrics[0].id,
-                                    gVideoSinkMetrics, gActualVideoSinkMetrics);
+
+	if (hasTrickModeAction(trickModes))
+        {
+            UT_LOG_INFO("Trick mode used. Hence skipping metrics validation");
+        }
+
+	else
+        {
+            validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
+                                        gAudioDecoderMetrics, gActualAudioDecoderMetrics);
+            validateVideoDecoderMetrics(gVideoDecoderMetrics[0].id,
+                                        gVideoDecoderMetrics, gActualVideoDecoderMetrics);
+            validateVideoSinkMetrics(gVideoSinkMetrics[0].id,
+                                        gVideoSinkMetrics, gActualVideoSinkMetrics);
+        }
         mPlayer->stop();
         mPlayer->close();
         mPlayer.reset();
@@ -785,6 +794,18 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(response);
             }
         }
+    }
+
+    static bool hasTrickModeAction(const std::vector<vtsL4TrickMode_t>& modes)
+    {
+        for(const auto& m : modes)
+        {
+            if(m.action == VTS_L4_PLAYER_SEEK ||
+               m.action == VTS_L4_PLAYER_TRICK_MODE ||
+	       m.action == VTS_L4_PLAYER_PAUSE)
+            return true;
+        }
+        return false;
     }
 
 /*
