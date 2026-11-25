@@ -385,7 +385,8 @@ class VTS_L4_AVMODULE : public UTCore
 
     void validateAudioDecoderMetrics(int32_t id,
                                      vector<audioDecoderMetrics_t> &audioDecoderMetrics,
-                                     audioDecoderMetrics_t &actualMetrics)
+                                     audioDecoderMetrics_t &actualMetrics,
+                                     bool isTrickMode)
     {
         for (size_t i = 0; i < audioDecoderMetrics.size(); ++i)
         {
@@ -395,6 +396,15 @@ class VTS_L4_AVMODULE : public UTCore
 	    if(audioDecoderMetrics[i].decodedFrames == -1)
             {
                 UT_LOG_INFO("Decoded frames metrics not supported in HAL");
+            }
+	    else if(isTrickMode)
+            {
+                if(audioDecoderMetrics[i].decodedFrames <=0)
+                {
+                    UT_LOG_ERROR("At least one decoded audio frame is expected during trick mode execution. Actual = %d",
+                                audioDecoderMetrics[i].decodedFrames);
+                    UT_ASSERT_TRUE(false);
+                }
             }
 	    else if(audioDecoderMetrics[i].decodedFrames != -1 &&
                     audioDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioFrames))
@@ -438,7 +448,8 @@ class VTS_L4_AVMODULE : public UTCore
 
     void validateVideoDecoderMetrics(int32_t id,
                                      vector<videoDecoderMetrics_t> &videoDecoderMetrics,
-                                     videoDecoderMetrics_t &actualMetrics)
+                                     videoDecoderMetrics_t &actualMetrics,
+                                     bool isTrickMode)
     {
         for (size_t i = 0; i < videoDecoderMetrics.size(); ++i)
         {
@@ -448,6 +459,15 @@ class VTS_L4_AVMODULE : public UTCore
             if(videoDecoderMetrics[i].decodedFrames == -1)
             {
                 UT_LOG_INFO("Metrics for decoded frames not supported in HAL");
+            }
+	    else if(isTrickMode)
+            {
+                if (videoDecoderMetrics[i].decodedFrames <=0)
+                {
+		    UT_LOG_ERROR("At least one decoded video frame is expected during trick mode execution. Actual = %d",
+                                videoDecoderMetrics[i].decodedFrames);
+                    UT_ASSERT_TRUE(false);
+                }
             }
 	    else if(videoDecoderMetrics[i].decodedFrames != -1 &&
                     videoDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoFrames))
@@ -490,7 +510,8 @@ class VTS_L4_AVMODULE : public UTCore
 
     void validateVideoSinkMetrics(int32_t id,
                                   vector<videoSinkMetrics_t> &videoSinkMetrics,
-                                  videoSinkMetrics_t &actualMetrics)
+                                  videoSinkMetrics_t &actualMetrics
+                                  bool isTrickMode)
     {
         for (size_t i = 0; i < videoSinkMetrics.size(); ++i)
         {
@@ -506,6 +527,15 @@ class VTS_L4_AVMODULE : public UTCore
             if(videoSinkMetrics[i].receivedFrames == -1)
             {
                 UT_LOG_INFO("Metrics for video sink received frames not supported in HAL");
+            }
+	    else if(isTrickMode)
+            {
+		if(videoSinkMetrics[i].receivedFrames <=0)
+                {
+                    UT_LOG_ERROR("At least one video sink received frame is expected during trick mode execution. Actual = %d",
+                                videoSinkMetrics[i].receivedFrames);
+                    UT_ASSERT_TRUE(false);
+                }
             }
 	    else if(videoSinkMetrics[i].receivedFrames != -1 &&
                     videoSinkMetrics[i].receivedFrames != actualMetrics.receivedFrames)
@@ -641,19 +671,13 @@ class VTS_L4_AVMODULE : public UTCore
 
         getVideoSinkMetrics(gVideoSinkMetrics);
 
-	if (hasTrickModeAction(trickModes))
-        {
-            UT_LOG_INFO("Trick mode used. Hence skipping metrics validation");
-        }
-	else
-        {
-            validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
-                                        gAudioDecoderMetrics, gActualAudioDecoderMetrics);
-            validateVideoDecoderMetrics(gVideoDecoderMetrics[0].id,
-                                        gVideoDecoderMetrics, gActualVideoDecoderMetrics);
-            validateVideoSinkMetrics(gVideoSinkMetrics[0].id,
-                                        gVideoSinkMetrics, gActualVideoSinkMetrics);
-        }
+        bool isTrickMode = hasTrickModeAction(trickModes)
+        validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
+                                    gAudioDecoderMetrics, gActualAudioDecoderMetrics, isTrickMode);
+        validateVideoDecoderMetrics(gVideoDecoderMetrics[0].id,
+                                    gVideoDecoderMetrics, gActualVideoDecoderMetrics, isTrickMode);
+        validateVideoSinkMetrics(gVideoSinkMetrics[0].id,
+                                    gVideoSinkMetrics, gActualVideoSinkMetrics, isTrickMode);
         mPlayer->stop();
         mPlayer->close();
         mPlayer.reset();
