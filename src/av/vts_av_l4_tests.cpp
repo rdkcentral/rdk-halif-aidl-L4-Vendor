@@ -510,7 +510,7 @@ class VTS_L4_AVMODULE : public UTCore
 
     void validateVideoSinkMetrics(int32_t id,
                                   vector<videoSinkMetrics_t> &videoSinkMetrics,
-                                  videoSinkMetrics_t &actualMetrics
+                                  videoSinkMetrics_t &actualMetrics,
                                   bool isTrickMode)
     {
         for (size_t i = 0; i < videoSinkMetrics.size(); ++i)
@@ -671,7 +671,7 @@ class VTS_L4_AVMODULE : public UTCore
 
         getVideoSinkMetrics(gVideoSinkMetrics);
 
-        bool isTrickMode = hasTrickModeAction(trickModes)
+        bool isTrickMode = hasTrickModeAction(trickModes);
         validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
                                     gAudioDecoderMetrics, gActualAudioDecoderMetrics, isTrickMode);
         validateVideoDecoderMetrics(gVideoDecoderMetrics[0].id,
