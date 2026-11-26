@@ -506,7 +506,7 @@ class VTS_L4_AVMODULE : public UTCore
 	        else
                 {
                     UT_ASSERT_EQUAL(videoSinkMetrics[i].receivedFrames,
-				    static_cast<int32_t>(gStreamConfiguration.numOfVideoFrames));
+				    actualMetrics.receivedFrames);
                 }
             }
             else
