@@ -399,7 +399,7 @@ class VTS_L4_AVMODULE : public UTCore
                 {
                     UT_ASSERT_TRUE(audioDecoderMetrics[i].decodedFrames > 0);
                 }
-	        else
+                else
                 {
                     UT_ASSERT_EQUAL(audioDecoderMetrics[i].decodedFrames, static_cast<int32_t>(gStreamConfiguration.numOfAudioFrames));
                 }
