@@ -407,7 +407,7 @@ class VTS_L4_AVMODULE : public UTCore
 
             else
                 {
-                    UT_LOG_INFO("Decoded frames metrics not supported in HAL");
+                    UT_LOG_INFO("Decoded frames metric is not yet implemented by the vendor");
                 }
 
             if(audioDecoderMetrics[i].errorFrames != -1)
@@ -417,16 +417,19 @@ class VTS_L4_AVMODULE : public UTCore
             }
             else
             {
-                UT_LOG_INFO("Audio error frames metric is not supported in HAL");
+                UT_LOG_INFO("Audio error frames metric is not yet implemented by the vendor");
             }
 
             if(audioDecoderMetrics[i].droppedFrames != -1)
             {
-                UT_ASSERT_EQUAL(audioDecoderMetrics[i].droppedFrames, 0);
+                if(!isTrickMode)
+                {
+                    UT_ASSERT_EQUAL(audioDecoderMetrics[i].droppedFrames, 0);
+                }
             }
             else
             {
-                UT_LOG_INFO("Metrics for dropped frames not supported in HAL");
+                UT_LOG_INFO("Dropped frames metric is not yet implemented by the vendor");
             }
             break;
         }
@@ -456,7 +459,7 @@ class VTS_L4_AVMODULE : public UTCore
             }
             else
             {
-                UT_LOG_INFO("Metrics for decoded frames not supported in HAL");
+                UT_LOG_INFO("Decoded frames metric is not yet implemented by the vendor");
             }
 
             if(videoDecoderMetrics[i].errorFrames != -1)
@@ -466,16 +469,19 @@ class VTS_L4_AVMODULE : public UTCore
             }
             else
             {
-                UT_LOG_INFO("Metrics for error frames not supported in HAL");
+                UT_LOG_INFO("Error frames metric is not yet implemented by the vendor");
             }
 
             if(videoDecoderMetrics[i].droppedFrames != -1)
             {
-                UT_ASSERT_EQUAL(videoDecoderMetrics[i].droppedFrames, 0);
+                if(!isTrickMode)
+                {
+                    UT_ASSERT_EQUAL(videoDecoderMetrics[i].droppedFrames, 0);
+                }
             }
             else
             {
-                UT_LOG_INFO("Video dropped frames metric not supported in HAL");
+                UT_LOG_INFO("Video dropped frames metric is not yet implemented by the vendor");
             }
             break;
         }
@@ -511,16 +517,19 @@ class VTS_L4_AVMODULE : public UTCore
             }
             else
             {
-                UT_LOG_INFO("Video sink received frames metric not supported in HAL");
+                UT_LOG_INFO("Video sink received frames metric metric is not yet implemented by the vendor");
             }
 
             if(videoSinkMetrics[i].framesDroppedLate != -1)
             {
-                UT_ASSERT_EQUAL(videoSinkMetrics[i].framesDroppedLate, 0);
+                if(!isTrickMode)
+                {
+                    UT_ASSERT_EQUAL(videoSinkMetrics[i].framesDroppedLate, 0);
+                }
             }
             else
             {
-                UT_LOG_INFO("Metrics for video sink frames dropped late not supported in HAL");
+                UT_LOG_INFO("Video sink frames dropped late metric is not yet implemented by the vendor");
             }
 
             if(videoSinkMetrics[i].framesRepeatedMiss != -1)
@@ -529,7 +538,7 @@ class VTS_L4_AVMODULE : public UTCore
             }
             else
             {
-                UT_LOG_INFO("Metrics for video sink frames repeated miss not supported in HAL");
+                UT_LOG_INFO("Video sink frames repeated miss metric is not yet implemented by the vendor");
             }
             break;
         }
