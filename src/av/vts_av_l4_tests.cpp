@@ -385,35 +385,50 @@ class VTS_L4_AVMODULE : public UTCore
 
     void validateAudioDecoderMetrics(int32_t id,
                                      vector<audioDecoderMetrics_t> &audioDecoderMetrics,
-                                     audioDecoderMetrics_t &actualMetrics)
+                                     audioDecoderMetrics_t &actualMetrics,
+                                     bool isTrickMode)
     {
         for (size_t i = 0; i < audioDecoderMetrics.size(); ++i)
         {
             if(audioDecoderMetrics[i].id != id)
                 continue;
 
-            if(audioDecoderMetrics[i].decodedFrames != -1 &&
-               audioDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioFrames))
+            if(audioDecoderMetrics[i].decodedFrames != -1)
             {
-                UT_LOG_ERROR(
-                        "Audio decoded frames mismatch: Expected = %u Actual = %d",
-                        gStreamConfiguration.numOfAudioFrames,
-                        audioDecoderMetrics[i].decodedFrames);
-                UT_ASSERT_TRUE(false);
+                if(isTrickMode)
+                {
+                    UT_ASSERT_TRUE(audioDecoderMetrics[i].decodedFrames > 0);
+                }
+                else
+                {
+                    UT_ASSERT_EQUAL(audioDecoderMetrics[i].decodedFrames, static_cast<int32_t>(gStreamConfiguration.numOfAudioFrames));
+                }
             }
-            if(audioDecoderMetrics[i].errorFrames != -1 &&
-               audioDecoderMetrics[i].errorFrames != static_cast<int32_t>(gStreamConfiguration.numOfAudioErrorFrames))
+            else
+                {
+                    UT_LOG_INFO("Decoded frames metric is not yet implemented by the vendor");
+                }
+
+            if(audioDecoderMetrics[i].errorFrames != -1)
             {
-                UT_LOG_ERROR(
-                        "Audio error frames mismatch: Expected = %u Actual = %d",
-                        gStreamConfiguration.numOfAudioErrorFrames,
-                        audioDecoderMetrics[i].errorFrames);
-                UT_ASSERT_TRUE(false);
+                UT_ASSERT_EQUAL(audioDecoderMetrics[i].errorFrames,
+                                static_cast<int32_t>(gStreamConfiguration.numOfAudioErrorFrames));
             }
-            if(audioDecoderMetrics[i].droppedFrames != -1 &&
-               audioDecoderMetrics[i].droppedFrames != 0)
+            else
             {
-                UT_ASSERT_TRUE(false);
+                UT_LOG_INFO("Audio error frames metric is not yet implemented by the vendor");
+            }
+
+            if(audioDecoderMetrics[i].droppedFrames != -1)
+            {
+                if(!isTrickMode)
+                {
+                    UT_ASSERT_EQUAL(audioDecoderMetrics[i].droppedFrames, 0);
+                }
+            }
+            else
+            {
+                UT_LOG_INFO("Dropped frames metric is not yet implemented by the vendor");
             }
             break;
         }
@@ -421,35 +436,51 @@ class VTS_L4_AVMODULE : public UTCore
 
     void validateVideoDecoderMetrics(int32_t id,
                                      vector<videoDecoderMetrics_t> &videoDecoderMetrics,
-                                     videoDecoderMetrics_t &actualMetrics)
+                                     videoDecoderMetrics_t &actualMetrics,
+                                     bool isTrickMode)
     {
         for (size_t i = 0; i < videoDecoderMetrics.size(); ++i)
         {
             if(videoDecoderMetrics[i].id != id)
                 continue;
 
-            if(videoDecoderMetrics[i].decodedFrames != -1 &&
-               videoDecoderMetrics[i].decodedFrames != static_cast<int32_t>(gStreamConfiguration.numOfVideoFrames))
+            if(videoDecoderMetrics[i].decodedFrames != -1)
             {
-                UT_LOG_ERROR(
-                        "Video decoded frames mismatch : Expected = %u Actual = %d ",
-                        gStreamConfiguration.numOfVideoFrames,
-                        videoDecoderMetrics[i].decodedFrames);
-                UT_ASSERT_TRUE(false);
+                if(isTrickMode)
+                {
+                    UT_ASSERT_TRUE(videoDecoderMetrics[i].decodedFrames > 0);
+                }
+                else
+                {
+                    UT_ASSERT_EQUAL(videoDecoderMetrics[i].decodedFrames,
+                                    static_cast<int32_t>(gStreamConfiguration.numOfVideoFrames));
+                }
             }
-            if(videoDecoderMetrics[i].errorFrames != -1 &&
-               videoDecoderMetrics[i].errorFrames <= 0)
+            else
             {
-                UT_LOG_ERROR(
-                        "Video error frames mismatch : Expected = %u Actual = %d ",
-                        gStreamConfiguration.numOfVideoErrorFrames,
-                        videoDecoderMetrics[i].errorFrames);
-                UT_ASSERT_TRUE(false);
+                UT_LOG_INFO("Decoded frames metric is not yet implemented by the vendor");
             }
-            if(videoDecoderMetrics[i].droppedFrames != -1 &&
-               videoDecoderMetrics[i].droppedFrames != 0)
+
+            if(videoDecoderMetrics[i].errorFrames != -1)
             {
-                UT_ASSERT_TRUE(false);
+                UT_ASSERT_EQUAL(videoDecoderMetrics[i].errorFrames,
+                                static_cast<int32_t>(gStreamConfiguration.numOfVideoErrorFrames));
+            }
+            else
+            {
+                UT_LOG_INFO("Error frames metric is not yet implemented by the vendor");
+            }
+
+            if(videoDecoderMetrics[i].droppedFrames != -1)
+            {
+                if(!isTrickMode)
+                {
+                    UT_ASSERT_EQUAL(videoDecoderMetrics[i].droppedFrames, 0);
+                }
+            }
+            else
+            {
+                UT_LOG_INFO("Video dropped frames metric is not yet implemented by the vendor");
             }
             break;
         }
@@ -457,7 +488,8 @@ class VTS_L4_AVMODULE : public UTCore
 
     void validateVideoSinkMetrics(int32_t id,
                                   vector<videoSinkMetrics_t> &videoSinkMetrics,
-                                  videoSinkMetrics_t &actualMetrics)
+                                  videoSinkMetrics_t &actualMetrics,
+                                  bool isTrickMode)
     {
         for (size_t i = 0; i < videoSinkMetrics.size(); ++i)
         {
@@ -470,20 +502,42 @@ class VTS_L4_AVMODULE : public UTCore
             {
                 UT_ASSERT_TRUE(false);
             }*/
-            if(videoSinkMetrics[i].receivedFrames != -1 &&
-               videoSinkMetrics[i].receivedFrames != actualMetrics.receivedFrames)
+            if(videoSinkMetrics[i].receivedFrames != -1)
             {
-                UT_ASSERT_TRUE(false);
+                if(isTrickMode)
+                {
+                    UT_ASSERT_TRUE(videoSinkMetrics[i].receivedFrames > 0);
+                }
+                else
+                {
+                    UT_ASSERT_EQUAL(videoSinkMetrics[i].receivedFrames,
+                                    actualMetrics.receivedFrames);
+                }
             }
-            if(videoSinkMetrics[i].framesDroppedLate != -1 &&
-               videoSinkMetrics[i].framesDroppedLate != 0)
+            else
             {
-                UT_ASSERT_TRUE(false);
+                UT_LOG_INFO("Video sink received frames metric is not yet implemented by the vendor");
             }
-            if(videoSinkMetrics[i].framesRepeatedMiss != -1 &&
-               videoSinkMetrics[i].framesRepeatedMiss != 0)
+
+            if(videoSinkMetrics[i].framesDroppedLate != -1)
             {
-                UT_ASSERT_TRUE(false);
+                if(!isTrickMode)
+                {
+                    UT_ASSERT_EQUAL(videoSinkMetrics[i].framesDroppedLate, 0);
+                }
+            }
+            else
+            {
+                UT_LOG_INFO("Video sink frames dropped late metric is not yet implemented by the vendor");
+            }
+
+            if(videoSinkMetrics[i].framesRepeatedMiss != -1)
+            {
+                UT_ASSERT_EQUAL(videoSinkMetrics[i].framesRepeatedMiss, 0);
+            }
+            else
+            {
+                UT_LOG_INFO("Video sink frames repeated miss metric is not yet implemented by the vendor");
             }
             break;
         }
@@ -594,12 +648,14 @@ class VTS_L4_AVMODULE : public UTCore
             gAudioDecoderMetrics[0].droppedFrames);
 
         getVideoSinkMetrics(gVideoSinkMetrics);
+
+        bool isTrickMode = hasTrickModeAction(trickModes);
         validateAudioDecoderMetrics(gAudioDecoderMetrics[0].id,
-                                    gAudioDecoderMetrics, gActualAudioDecoderMetrics);
+                                    gAudioDecoderMetrics, gActualAudioDecoderMetrics, isTrickMode);
         validateVideoDecoderMetrics(gVideoDecoderMetrics[0].id,
-                                    gVideoDecoderMetrics, gActualVideoDecoderMetrics);
+                                    gVideoDecoderMetrics, gActualVideoDecoderMetrics, isTrickMode);
         validateVideoSinkMetrics(gVideoSinkMetrics[0].id,
-                                    gVideoSinkMetrics, gActualVideoSinkMetrics);
+                                    gVideoSinkMetrics, gActualVideoSinkMetrics, isTrickMode);
         mPlayer->stop();
         mPlayer->close();
         mPlayer.reset();
@@ -785,6 +841,20 @@ class VTS_L4_AVMODULE : public UTCore
                 UT_ASSERT_TRUE(response);
             }
         }
+    }
+
+    static bool hasTrickModeAction(const std::vector<vtsL4TrickMode_t>& modes)
+    {
+        for(const auto& m : modes)
+        {
+            if(m.action == VTS_L4_PLAYER_SEEK ||
+               m.action == VTS_L4_PLAYER_TRICK_MODE ||
+	       m.action == VTS_L4_PLAYER_PAUSE)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
 /*
