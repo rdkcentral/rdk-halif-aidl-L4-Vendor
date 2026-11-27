@@ -517,7 +517,7 @@ class VTS_L4_AVMODULE : public UTCore
             }
             else
             {
-                UT_LOG_INFO("Video sink received frames metric metric is not yet implemented by the vendor");
+                UT_LOG_INFO("Video sink received frames metric is not yet implemented by the vendor");
             }
 
             if(videoSinkMetrics[i].framesDroppedLate != -1)
