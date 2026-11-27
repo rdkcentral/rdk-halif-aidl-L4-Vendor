@@ -404,7 +404,6 @@ class VTS_L4_AVMODULE : public UTCore
                     UT_ASSERT_EQUAL(audioDecoderMetrics[i].decodedFrames, static_cast<int32_t>(gStreamConfiguration.numOfAudioFrames));
                 }
             }
-
             else
                 {
                     UT_LOG_INFO("Decoded frames metric is not yet implemented by the vendor");
@@ -512,7 +511,7 @@ class VTS_L4_AVMODULE : public UTCore
                 else
                 {
                     UT_ASSERT_EQUAL(videoSinkMetrics[i].receivedFrames,
-				    actualMetrics.receivedFrames);
+                                    actualMetrics.receivedFrames);
                 }
             }
             else
